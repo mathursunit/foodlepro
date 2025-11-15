@@ -1,304 +1,214 @@
-// script.js with toast notification and flip animation
-const APP_VERSION = 'v5.0.7';
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const EPOCH_MS = Date.UTC(2025, 0, 1);
-
-function showToast(message) {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerText = message;
-  container.appendChild(toast);
-  setTimeout(() => toast.classList.add('show'), 10);
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 200);
-  }, 2000);
-}
-
-
-let WORDS = [];
-let INPUT_LOCKED = false;
-let solution = '';
-let currentRow = 0, currentCol = 0;
-const rows = [];
-
-fetch('assets/fihr_food_words_v1.4.csv')
-  .then(r => r.text())
-  .then(txt => {
-    const lines = txt.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
-    WORDS = [];
-    for (let i=0;i<lines.length;i++){
-      let line = lines[i].replace(/^\ufeff/, '');
-      const idx = line.indexOf(',');
-      let word = (idx>=0 ? line.slice(0, idx) : line).trim();
-      if (word.startsWith('"') && word.endsWith('"')) word = word.slice(1,-1);
-      word = word.replace(/[^A-Za-z]/g,'').toUpperCase();
-      if (i===0 && word.toLowerCase()==='word') continue;
-      if (word.length===5) WORDS.push(word);
-    }
-    startGame();
-  }).catch(()=>{ WORDS=['APPLE','MANGO','BERRY','PIZZA','ALONE','PASTA','BREAD','SALAD','GRAPE','CHILI']; startGame(); });
-
-function getDailyIndex() {
-  const now = new Date();
-  const todayUTCmid = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const days = Math.floor((todayUTCmid - EPOCH_MS) / MS_PER_DAY);
-  return ((days % WORDS.length) + WORDS.length) % WORDS.length;
-}
-
-function showToast(message) {
-  const container = document.getElementById('toast-container');
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.textContent = message.toUpperCase();
-  container.appendChild(toast);
-  requestAnimationFrame(() => {
-    toast.classList.add('show');
-  });
-  setTimeout(() => {
-    toast.classList.remove('show');
-    toast.addEventListener('transitionend', () => toast.remove(), { once: true });
-  }, 2000);
-}
-
-function startGame() {
-  ensureLegend();
-  // Add row numbers 1..5 on first tile
-  document.querySelectorAll('#grid .row').forEach((row, idx)=>{
-    const first = row.querySelector('.tile');
-    if(first){ first.classList.add('row-label'); first.setAttribute('data-rownum', String(idx+1)); }
-  });
-  layoutGrid();
-  window.setTimeout(layoutGrid, 50);
-  initMenu();
-  (function(){try{var wm=document.createElement('div');wm.textContent='Build '+APP_VERSION;wm.style.position='fixed';wm.style.right='10px';wm.style.bottom='8px';wm.style.opacity='.35';wm.style.fontWeight='700';wm.style.pointerEvents='none';document.body.appendChild(wm);}catch(e){}})();
-  const vl = document.getElementById('version-label'); if (vl) vl.textContent = 'Build ' + APP_VERSION;
-  solution = WORDS[getDailyIndex()];
-  document.body.focus();
-  document.querySelectorAll('.row').forEach(r => rows.push(Array.from(r.children)));
-  window.addEventListener('keydown', onKey);
-  document.querySelectorAll('#keyboard .key').forEach(btn => {
-    btn.addEventListener('click', () => { btn.classList.add('press'); setTimeout(()=>btn.classList.remove('press'), 140);
-      const k = btn.dataset.key || btn.textContent;
-      onKey({ key: k });
-    });
-  });
-}
-
-function onKey(e) {
-  if (window.INPUT_LOCKED) { return; }
-const key = e.key.toUpperCase();
-  if (currentRow >= 5) return;
-  if (key === 'ENTER') return checkGuess();
-  if (key === 'BACKSPACE') return deleteLetter();
-  if (/^[A-Z]$/.test(key) && currentCol < 5) addLetter(key);
-}
-
-function addLetter(letter) {
-  // v3.1: mark first tile as filled to hide row label when typing
-  rows[currentRow][currentCol].textContent = letter;
-  currentCol++;
-}
-
-function deleteLetter() {
-  if (currentCol > 0) {
-    currentCol--;
-    rows[currentRow][currentCol].textContent = '';
-  }
-}
-
-function findKeyBtn(ch) {
-  return Array.from(document.querySelectorAll('#keyboard .key')).find(b => b.textContent === ch);
-}
-
-
-function checkGuess() {
-  if (currentCol < 5) {
-    showToast('Not enough letters');
-    return;
-  }
-  const guess = rows[currentRow].map(t => t.textContent).join('');
-  if (!WORDS.includes(guess)) {
-    showToast('Not in word list');
-    return;
-  }
-  const solArr = solution.split('');
-  const solCount = {};
-  solArr.forEach(l => solCount[l] = (solCount[l] || 0) + 1);
-  const states = Array(5).fill('absent');
-
-  // First pass: correct letters
-  guess.split('').forEach((l, i) => {
-    if (l === solArr[i]) {
-      states[i] = 'correct';
-      solCount[l]--;
-    }
-  });
-
-  // Second pass: present letters
-  guess.split('').forEach((l, i) => {
-    if (states[i] === 'absent' && solCount[l] > 0) {
-      states[i] = 'present';
-      solCount[l]--;
-    }
-  });
-
-  // Animate tiles
-  rows[currentRow].forEach((tile, i) => {
-    const state = states[i];
-    const letter = guess[i];
-    setTimeout(() => {
-      tile.classList.add('flip');
-      tile.addEventListener('animationend', () => {
-        tile.classList.remove('flip');
-        tile.classList.add(state);
-        const keyBtn = findKeyBtn(letter);
-        if (state === 'correct') {
-          keyBtn.classList.add('correct');
-        } else if (state === 'present' && !keyBtn.classList.contains('correct')) {
-          keyBtn.classList.add('present');
-        } else {
-          keyBtn.classList.add('absent');
-        }
-      }, { once: true });
-    }, i * 300);
-  });
-
-  // After animations
-  setTimeout(() => {
-    if (guess === solution) { 
-try{
-  window.INPUT_LOCKED = true;
-  
-  var grid=document.getElementById('grid'); if(grid) grid.classList.add('disabled-grid');
-  var hb=document.getElementById('hintBtn'); if(hb){ hb.disabled=true; hb.classList.add('loading'); hb.classList.remove('loading'); }
-}catch(e){} try{ if (typeof showToast==='function'){ showToast('Game Over - You Rock!'); } }catch(e){} try{ if (window.recordGame) window.recordGame('win', (typeof currentRow!=='undefined'? currentRow+1 : 0), !!window.HINT_USED); }catch(e){}
-      showToast('Great');
-    if (typeof confetti === 'function') confetti({ particleCount: 200, spread: 60 });
-      currentRow = 5;
-    } else {
-      currentRow++;
-      try{
-        var rowsTotal = 5; if (typeof MAX_ROWS !== 'undefined') rowsTotal = MAX_ROWS;
-        if (currentRow >= rowsTotal && guess !== solution) {
-          window.INPUT_LOCKED = true; 
-          if (typeof showToast==='function'){ showToast('Game Over - Better luck tomorrow'); } try{ window.dispatchEvent(new CustomEvent('fihr:gameover',{detail:{outcome:'loss'}})); }catch(e){} 
-try{
-  window.INPUT_LOCKED = true;
-  
-  var grid=document.getElementById('grid'); if(grid) grid.classList.add('disabled-grid');
-  var hb=document.getElementById('hintBtn'); if(hb){ hb.disabled=true; hb.classList.add('loading'); hb.classList.remove('loading'); }
-}catch(e){} try{ var _max=(typeof MAX_ROWS!=='undefined'? MAX_ROWS:5); if (window.recordGame) window.recordGame('loss', _max, !!window.HINT_USED); }catch(e){}
-        }
-      }catch(e){}
-
-      currentCol = 0;
-      if (currentRow === 5) {
-        showToast(`The word was ${solution}`);
-      }
-    }
-  }, 5 * 300 + 100);
-}
-
-
-// ---- Countdown to Next Puzzle ----
+/* Shared game script — v5.0.9 */
 (function(){
-  const countdownEl = document.getElementById('countdown');
-  function updateCountdown() {
-    const now = new Date();
-    const nextMidnightUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + 1
-    ));
-    const diff = nextMidnightUTC - now;
-    const hours = String(Math.floor(diff / 3600000)).padStart(2, '0');
-    const minutes = String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0');
-    const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, '0');
-    countdownEl.innerText = `Next word in ${hours}:${minutes}:${seconds}`;
+'use strict';
+
+const MODE = (window.GAME_MODE||'classic');
+const WORDLEN = window.WORDLEN||5;
+const MAX_ROWS = window.MAX_ROWS||5;
+const HINT_REMAINING = MODE==='pro' ? 2 : 1;  // after hint
+const LS_STATS_CLASSIC = 'fihr_stats_v1';
+const LS_STATS_PRO = 'fihr_stats_v1_pro';
+const grid = document.getElementById('grid');
+const keyboard = document.getElementById('keyboard');
+const hintBtn = document.getElementById('hintBtn');
+const statsBtn = document.getElementById('statsBtn');
+const aboutBtn = document.getElementById('aboutBtn');
+const hintText = document.getElementById('hintText');
+
+let words=[], hints={}, solution='', row=0, col=0, LOCK=false, HINT_USED=false;
+
+const csvPath = MODE==='pro' ? '../assets/fihr_words6_temp.csv' : 'assets/fihr_food_words_v1.4.csv';
+
+/* Countdown to 8AM IST */
+(function tick(){
+  const el=document.getElementById('countdown'); if(!el) return;
+  function nextIST8(){
+    const now=new Date();
+    const utc= now.getTime() + now.getTimezoneOffset()*60000;
+    const ist= new Date(utc + 330*60000);
+    ist.setHours(8,0,0,0);
+    if (ist < new Date(utc + 330*60000)) ist.setDate(ist.getDate()+1);
+    return ist.getTime() - (utc + 330*60000);
   }
-  updateCountdown();
-  setInterval(updateCountdown, 1000);
+  function fmt(ms){ const s=Math.floor(ms/1000); const h=String(Math.floor(s/3600)).padStart(2,'0'); const m=String(Math.floor(s%3600/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${h}:${m}:${ss}`; }
+  function loop(){ const ms=nextIST8(); el.textContent='Next word in '+fmt(ms); requestAnimationFrame(loop); }
+  loop();
 })();
 
-function showModal(title, contentHtml){
-  const old = document.getElementById('modal-backdrop'); if (old) old.remove();
-  const backdrop = document.createElement('div'); backdrop.id = 'modal-backdrop'; backdrop.setAttribute('role','dialog'); backdrop.setAttribute('aria-modal','true');
-  const modal = document.createElement('div'); modal.id = 'modal';
-  modal.innerHTML = `<h3>${title}</h3><div class="content">${contentHtml}</div>
-    <div class="actions"><button class="btn primary" id="modal-ok" autofocus>OK</button></div>`;
-  backdrop.appendChild(modal); document.body.appendChild(backdrop);
-  const close = ()=> backdrop.remove();
-  document.getElementById('modal-ok').addEventListener('click', close);
-  backdrop.addEventListener('click', (e)=>{ if(e.target===backdrop) close(); });
-  document.addEventListener('keydown', function escHandler(ev){ if(ev.key==='Escape'){ close(); document.removeEventListener('keydown', escHandler); } });
+/* Utils */
+function dailyIndex(n){
+  const now=new Date();
+  const utc= now.getTime() + now.getTimezoneOffset()*60000;
+  const ist= utc + 330*60000;
+  const cutoff = new Date(ist - 8*3600000); // shift 8am
+  const epoch = Date.UTC(2024,0,1,0,0,0);
+  const days = Math.floor((cutoff.getTime()-epoch)/86400000);
+  return n? ((days % n)+n)%n : 0;
 }
-function initMenu(){
-  const btn = document.getElementById('menu-btn');
-  const panel = document.getElementById('menu-panel');
-  if(!btn || !panel) return;
-  const close = ()=> panel.classList.remove('open');
-  btn.addEventListener('click', (e)=>{ e.stopPropagation(); panel.classList.toggle('open'); });
-  document.addEventListener('click', close);
-  panel.addEventListener('click', (e)=> e.stopPropagation());
-  panel.querySelectorAll('.menu-item').forEach(mi => {
-    mi.addEventListener('click', ()=> {
-      const action = mi.dataset.action;
-      close();
-      if(action === 'version'){
-        showModal('Version', `<p><strong>FIHR – Foodle</strong><br/>Build ${APP_VERSION}</p>`);
-      } else if(action === 'about'){
-        showModal('About', `<p><strong>FIHR – Foodle</strong> is a personal learning project.</p>`);
-      }
-    });
+function tileAt(r,c){ return grid.children[r*WORDLEN + c]; }
+function currentGuess(){ let s=''; for (let c=0;c<WORDLEN;c++) s+= (tileAt(r,c).textContent||''); return s; }
+function disableInput(){ LOCK=true; /* keep keyboard visible */ }
+function enableInput(){ LOCK=false; }
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t);
+    Object.assign(t.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'72px',background:'#111',color:'#fff',padding:'.6rem .9rem',borderRadius:'10px',fontWeight:'800',boxShadow:'0 6px 24px rgba(0,0,0,.35)',zIndex:2000});
+  }
+  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(()=>t.style.opacity='0',1800);
+}
+
+/* Rendering */
+function renderGrid(){
+  grid.style.gridTemplateColumns = `repeat(${WORDLEN}, var(--tileSize))`;
+  grid.innerHTML='';
+  for(let i=0;i<MAX_ROWS*WORDLEN;i++){
+    const t=document.createElement('div'); t.className='tile'; grid.appendChild(t);
+  }
+}
+function loadKeyboard(){
+  const rows=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];
+  keyboard.innerHTML='';
+  rows.forEach(rowKeys=>{
+    const rdiv=document.createElement('div'); rdiv.className='krow';
+    rowKeys.forEach(k=>{
+      const b=document.createElement('button'); b.className='key'; if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.textContent=k;
+      b.addEventListener('click', ()=>onKey(k)); rdiv.appendChild(b);
+    }); keyboard.appendChild(rdiv);
   });
 }
+function autoSize(){
+  const root=document.documentElement;
+  const vh=window.innerHeight||root.clientHeight, vw=window.innerWidth||root.clientWidth;
+  const kbd=keyboard.getBoundingClientRect().height||220;
+  const margins=160; // header + brand + controls + legend
+  const gap=6;
+  const byH=Math.floor((vh - kbd - margins - (MAX_ROWS-1)*gap)/MAX_ROWS);
+  const byW=Math.floor(((vw*0.9) - (WORDLEN-1)*gap)/WORDLEN);
+  const size=Math.max(28,Math.min(byH,byW));
+  root.style.setProperty('--tileSize', size+'px');
+}
+window.addEventListener('resize',autoSize);
+window.addEventListener('orientationchange',autoSize);
 
-
-// Dynamic grid sizing between banner and keyboard
-function layoutGrid(){
+/* CSV load */
+async function loadWords(){
   try{
-    const banner = document.querySelector('.title-banner');
-    const grid = document.getElementById('grid');
-    const kb = document.getElementById('keyboard');
-    if(!grid || !kb) return;
-    const bannerRect = banner ? banner.getBoundingClientRect() : {bottom:0};
-    const kbRect = kb.getBoundingClientRect();
-    const topY = (banner ? bannerRect.bottom : 0) + window.scrollY;
-    const bottomY = kbRect.top + window.scrollY;
-    let avail = bottomY - topY - 120; // padding for labels/legend
-    // clamp available height
-    avail = Math.max(240, Math.min(avail, 560));
-    const gap = 8;
-    // rows = 5 => total gaps = 4*gap
-    let tile = Math.floor((avail - 4*gap) / 5);
-    tile = Math.max(34, Math.min(tile, 64));
-    document.documentElement.style.setProperty('--tile', tile + 'px');
-  }catch(e){/* ignore */}
-}
-window.addEventListener('resize', layoutGrid);
-window.addEventListener('orientationchange', layoutGrid);
-
-function markTileLetterState(tile){
-  if(!tile) return;
-  if(tile.textContent && tile.textContent.trim().length>0){
-    tile.classList.add('has-letter');
-  }else{
-    tile.classList.remove('has-letter');
+    const txt = await fetch(csvPath,{cache:'no-store'}).then(r=>r.text());
+    const lines = txt.split('\n'); // header + rows
+    for(let i=1;i<lines.length;i++){
+      const line=(lines[i]||'').trim(); if(!line) continue;
+      const pos=line.indexOf(',');
+      if(pos<0) continue;
+      let w=line.slice(0,pos).toUpperCase();
+      // strip non-letters without regex
+      let clean=''; for(let j=0;j<w.length;j++){ const ch=w[j], L=ch.toLowerCase(); if(L>='a'&&L<='z') clean+=ch; }
+      const h=line.slice(pos+1).trim();
+      if(clean.length===WORDLEN){ words.push(clean); hints[clean]=h; }
+    }
+  }catch(e){}
+  if(!words.length){
+    if(MODE==='pro'){ words=['BANANA','BUTTER','CHEESE','COOKIEE','ORANGE','PIZZAO','TOMATOE','SPICES','PANEER','GINGER']; }
+    else { words=['BASIL','PLATE','MANGO','APPLE','CHILI','WHEAT','GHEE','BIRYI','IDLIY','LASSI']; }
+    hints={'BASIL':'Herb for pesto','PLATE':'Served on this','MANGO':'King of fruits','APPLE':'Keeps doc away','CHILI':'Hot pepper','WHEAT':'Bread grain','GHEE':'Clarified butter','BIRYI':'Hyderabadi rice','IDLIY':'Steamed South snack','LASSI':'Punjabi yogurt drink','BANANA':'Yellow fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','COOKIEE':'Baked treat','ORANGE':'Citrus fruit','PIZZAO':'Slice of heaven','TOMATOE':'Red salad fruit','SPICES':'Masala magic','PANEER':'Cottage cheese','GINGER':'Spicy root'};
   }
+  const idx=dailyIndex(words.length);
+  solution=words[idx]||words[0];
+  renderGrid(); loadKeyboard(); autoSize();
+  setTimeout(autoSize,0);
 }
 
-function ensureLegend(){
-  const grid = document.getElementById('grid');
-  if(!grid) return;
-  let legend = document.getElementById('legend');
-  if(!legend){
-    legend = document.createElement('div');
-    legend.id = 'legend';
-    legend.className = 'legend';
-    legend.innerHTML = '<span class="chip correct"></span><em>Correct</em> <span class="chip present"></span><em>Present</em> <span class="chip absent"></span><em>Absent</em>';
-    grid.insertAdjacentElement('afterend', legend);
+/* Input */
+function onKey(k){
+  if(LOCK) return;
+  if(k==='⌫'){ if(col>0){ col--; const t=tileAt(row,col); t.textContent=''; t.classList.remove('filled'); } return; }
+  if(k==='ENTER'){ submit(); return; }
+  if(k.length===1){
+    const ch=k.toUpperCase();
+    if(ch>='A'&&ch<='Z' && col<WORDLEN){ const t=tileAt(row,col); t.textContent=ch; t.classList.add('filled'); col++; }
   }
 }
+window.addEventListener('keydown',e=>{
+  let k=e.key; if(k==='Backspace') k='⌫'; else if(k==='Enter') k='ENTER'; else k=k.toUpperCase();
+  if(k==='ENTER'||k==='⌫'||(k.length===1 && k>='A'&&k<='Z')) onKey(k);
+});
+
+function evaluate(g){
+  const res=new Array(WORDLEN).fill('absent'), sol=solution.split(''), ga=g.split('');
+  for(let i=0;i<WORDLEN;i++){ if(ga[i]===sol[i]){ res[i]='correct'; sol[i]='*'; ga[i]='_'; } }
+  for(let i=0;i<WORDLEN;i++){ if(res[i]==='correct') continue; const p=sol.indexOf(ga[i]); if(p>-1){ res[i]='present'; sol[p]='*'; } }
+  return res;
+}
+function paintRow(r,res){ for(let c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add(res[c]); } }
+
+/* Stats */
+function loadStats(mode){ const key = mode==='pro'? LS_STATS_PRO : LS_STATS_CLASSIC; try{ return JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){ return {}; } }
+function saveStats(mode, s){ const key = mode==='pro'? LS_STATS_PRO : LS_STATS_CLASSIC; localStorage.setItem(key, JSON.stringify(s)); }
+function record(win){
+  const keyMode=MODE==='pro'?'pro':'classic';
+  const s = Object.assign({played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}, loadStats(keyMode));
+  s.played++; if(win){ s.wins++; s.cur++; if(s.cur>s.max) s.max=s.cur; s.totalGuesses += (row+1); } else { s.cur=0; }
+  if(HINT_USED) s.hints++;
+  s.lastSolution=solution;
+  saveStats(keyMode, s);
+}
+function openStats(initial='classic'){
+  const m=document.getElementById('statsModal'); m.classList.add('open');
+  const c=document.getElementById('statsClassic'), p=document.getElementById('statsPro');
+  function card(k,v){ return `<div style="display:inline-block;min-width:120px;margin:6px 8px;text-align:center"><div style="color:var(--muted)">${k}</div><div style="font-weight:900;font-size:1.3rem">${v}</div></div>`; }
+  function render(mode, el){
+    const st = loadStats(mode);
+    const winRate = st.played? Math.round(100* (st.wins||0) / st.played)+'%' : '0%';
+    el.innerHTML = card('Played', st.played||0)+card('Wins',st.wins||0)+card('Win Rate',winRate)+card('Current Streak',st.cur||0)+card('Max Streak',st.max||0)+card('Avg Guesses', (st.wins? (st.totalGuesses/st.wins).toFixed(1):'0.0'))+card('Hints Used',st.hints||0)+card('Last', st.lastSolution||'-');
+  }
+  render('classic',c); render('pro',p);
+  const tabC=document.getElementById('tabClassic'), tabP=document.getElementById('tabPro');
+  function show(which){ if(which==='classic'){ c.style.display='block'; p.style.display='none'; tabC.disabled=true; tabP.disabled=false; } else { c.style.display='none'; p.style.display='block'; tabC.disabled=false; tabP.disabled=true; } }
+  show(initial);
+  document.getElementById('resetStats').onclick=()=>{ const mode = tabC.disabled? 'pro' : 'classic'; saveStats(mode,{}); show(mode); };
+}
+
+/* End game & hint */
+function endGame(win){
+  disableInput();
+  try{ confetti && confetti({particleCount: 220, spread: 80, origin: { y: .6 }}); }catch(e){}
+  record(win);
+  showToast(win? 'Game Over - You Rock!' : 'Game Over - Better luck tomorrow');
+  if(hintBtn) hintBtn.disabled=true;
+}
+function submit(){
+  if(col<WORDLEN) return;
+  const g=currentGuess();
+  let valid=false; for(let i=0;i<words.length;i++){ if(words[i]===g){ valid=true; break; } }
+  if(!valid){ showToast('Not in word list'); return; }
+  const res=evaluate(g); paintRow(row,res);
+  if(g===solution){ endGame(true); return; }
+  row++; col=0;
+  if(row>=MAX_ROWS){ endGame(false); }
+}
+
+function useHint(){
+  if(HINT_USED) return;
+  HINT_USED=true;
+  const keepStart = MAX_ROWS - HINT_REMAINING;
+  for(let rr=0; rr<keepStart; rr++){ for(let c=0;c<WORDLEN;c++){ tileAt(rr,c).classList.add('ghost'); } }
+  if(row < keepStart) row = keepStart; col=0;
+  const h = hints[solution] || '';
+  if(hintText){ hintText.textContent = h? ('Hint: '+h) : 'Hint used'; }
+  if(hintBtn){ hintBtn.disabled=true; hintBtn.style.opacity=.5; }
+  showToast(HINT_REMAINING===1 ? 'Only 1 guess left!' : 'Only 2 guesses left!');
+}
+
+/* Wire UI */
+if(hintBtn){
+  document.getElementById('hintModal').querySelectorAll('[data-close], #hintCancel').forEach(el=>el.addEventListener('click', ()=>document.getElementById('hintModal').classList.remove('open')));
+  document.getElementById('hintConfirm').addEventListener('click', ()=>{ document.getElementById('hintModal').classList.remove('open'); useHint(); });
+  hintBtn.addEventListener('click', ()=>document.getElementById('hintModal').classList.add('open'));
+}
+if(statsBtn){ statsBtn.onclick=()=>openStats(MODE==='pro'?'pro':'classic'); }
+if(aboutBtn){ aboutBtn.onclick=()=>document.getElementById('aboutModal').classList.add('open'); }
+document.querySelectorAll('.modal .bg,[data-close]').forEach(el=>el.addEventListener('click',e=>{ const m=el.closest('.modal'); m && m.classList.remove('open'); }));
+window.addEventListener('keydown', e=>{ if(e.key==='Escape'){ document.querySelectorAll('.modal.open').forEach(m=>m.classList.remove('open')); } });
+
+/* Init */
+renderGrid(); loadKeyboard(); loadWords();
+})();

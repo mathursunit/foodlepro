@@ -1,208 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>FIHR Foodle Pro — v5.0.1</title>
-  <link rel="icon" href="../favicon.ico"/>
-  <link rel="stylesheet" href="../style.css?v=v5.0.7"/>
-
-  <style>
-    /* v5.0.6 Pro overrides — ensure grid is visible on all devices */
-    .pro .board{ display:flex; justify-content:center; margin:.25rem auto .5rem; width:100%; }
-    .pro .grid{ display:grid; gap:6px; }
-    .pro .tile{ width:var(--proTileSize,56px); height:var(--proTileSize,56px); min-width:28px; min-height:28px;
-                background:#f1f5f9; border:2px solid #d1d5db; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.1rem; }
-    .pro .tile.filled{ border-color:#cbd5e1; }
-    .pro .tile.correct{ background:#8b5cf6; color:#fff; border-color:#8b5cf6; }
-    .pro .tile.present{ background:#22d3ee; color:#083344; border-color:#22d3ee; }
-    .pro .tile.absent{ background:#cbd5e1; color:#374151; border-color:#cbd5e1; }
-  </style>
+  <title>FIHR Foodle — Pro</title>
+  <link rel="stylesheet" href="../style.css?v=v5.0.9"/>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded',()=>{
+      try{const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);} }catch(e){}
+    });
+    window.GAME_MODE='pro';
+    window.WORDLEN=6;
+    window.MAX_ROWS=6;
+    window.APP_VERSION='v5.0.9';
+  </script>
 </head>
-<body class="pro pro pro pro">
-  <div class="game-container">
-    <div class="mode-banner">
-      <a class="btn-ghost" href="../index.html">← Classic</a>
-      <div class="title">FIHR Foodle <span style="font-weight:400;">Pro</span></div>
+<body class="pro">
+  <div class="container">
+    <div class="next"><span id="countdown">Next word in …</span></div>
+    <div class="header">
+      <a class="badge" href="../index.html"><span class="n">5</span>Classic</a>
+      <a class="badge" href="#"><span class="n">6</span>Pro</a>
     </div>
+    <div class="brand">
+      <div class="logo">FIHR</div>
+      <div class="logo">Foodle Pro</div>
+    </div>
+
+    <div class="board"><div class="grid" id="grid"></div></div>
 
     <div class="controls">
-      <button id="hintBtn" class="icon-btn" aria-label="Use a hint">💡</button>
-      <button id="statsBtn" class="icon-btn" aria-label="View stats">📊</button>
-      <button id="aboutBtn" class="icon-btn" aria-label="About">ℹ️</button>
+      <button id="hintBtn" class="btn icon-btn" title="Hint">💡</button>
+      <button id="statsBtn" class="btn icon-btn" title="Stats">📊</button>
+      <button id="aboutBtn" class="btn icon-btn" title="About">ℹ️</button>
     </div>
 
-    <div id="hintText" class="hint-label"></div>
-    <div class="board"><div class="grid" id="grid"></div></div>
-    <div id="keyboard"></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--good)"></span>Correct</span>
+      <span><span class="dot" style="background:var(--present)"></span>Present</span>
+      <span><span class="dot" style="background:var(--absent)"></span>Absent</span>
+    </div>
+
+    <div id="hintText" class="next" style="min-height:24px;"></div>
+
+    <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
   </div>
 
-  <div class="subtle-version">Build v5.0.7 (Pro)</div>
+  <div class="watermark">Build v5.0.9 (Pro)</div>
 
-  <!-- Hint Modal -->
-  <div id="hintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
-    <div class="modal-backdrop"></div>
-    <div class="modal-box" role="document">
+  <!-- Hint modal -->
+  <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
+    <div class="bg" data-close="1"></div>
+    <div class="panel">
       <h2 id="hintTitle">Use a hint?</h2>
-      <p>Using a hint will <strong>leave only two guesses</strong> for today.</p>
-      <div class="modal-actions">
-        <button id="hintCancel" class="btn-ghost">Cancel</button>
-        <button id="hintConfirm" class="btn-ghost" style="background:#6aaa64;color:#fff;">Use hint</button>
+      <p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
+      <div class="actions">
+        <button class="btn" id="hintCancel">Cancel</button>
+        <button class="btn" id="hintConfirm">Use Hint</button>
       </div>
     </div>
   </div>
 
-  <script>
-/* FIHR Foodle Pro — v5.0.7 (regex-free JS to avoid parse issues) */
-const APP_VERSION = 'v5.0.7';
-const WORDLEN = 6, MAX_ROWS = 6;
-let solution = ''; let currentRow = 0, currentCol = 0;
-let INPUT_LOCKED = false, HINT_USED = false;
-let words = [], hints = {};
+  <!-- Stats modal (shared, tabbed) -->
+  <div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+    <div class="bg" data-close="1"></div>
+    <div class="panel">
+      <h2 id="statsTitle">Your Stats</h2>
+      <div class="actions" style="justify-content:center;margin-bottom:10px">
+        <button class="btn" id="tabClassic">Classic</button>
+        <button class="btn" id="tabPro">Pro</button>
+      </div>
+      <div id="statsClassic"></div>
+      <div id="statsPro" style="display:none"></div>
+      <div class="actions">
+        <button class="btn" id="resetStats">Reset Current</button>
+        <button class="btn" data-close="1">Close</button>
+      </div>
+    </div>
+  </div>
 
-const grid = document.getElementById('grid');
-const keyboard = document.getElementById('keyboard');
-function $(s){ return document.querySelector(s); }
-function $all(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
+  <!-- About modal -->
+  <div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="bg" data-close="1"></div>
+    <div class="panel">
+      <h2 id="aboutTitle">About FIHR Foodle Pro</h2>
+      <p>Hungry for 6‑letter glory? 🥇</p>
+      <div class="linkbar"><span>Follow us on:</span>
+        <a class="sicon" href="https://www.instagram.com/foodiesinhydreloaded/" target="_blank" rel="noopener" title="Instagram">📷</a>
+        <a class="sicon" href="https://www.facebook.com/groups/foodiesinhyd" target="_blank" rel="noopener" title="Facebook">📘</a>
+      </div>
+      <div class="actions"><button class="btn" data-close="1">Close</button></div>
+    </div>
+  </div>
 
-(function ensureConfetti(){ if(window.confetti) return; const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'; s.async=true; document.head.appendChild(s); })();
-
-function getDailyIndex(n){
-  const IST_OFFSET_MIN=330, CUTOFF_HOURS=8;
-  const now=new Date();
-  const utc=now.getTime()+now.getTimezoneOffset()*60000;
-  const ist=utc+IST_OFFSET_MIN*60000;
-  const shifted=new Date(ist - CUTOFF_HOURS*3600000);
-  const epochIST=Date.UTC(2023,11,31,18,30);
-  const days=Math.floor((shifted.getTime()-epochIST)/86400000);
-  return n? ((days % n)+n)%n : 0;
-}
-
-async function loadWords(){
-  try{
-    const res = await fetch('../assets/fihr_words6_temp.csv',{cache:'no-store'});
-    const txt = await res.text();
-    const lines = txt.split('
-');
-    // skip header
-    for (var i=1;i<lines.length;i++){
-      var line = (lines[i]||'').trim();
-      if(!line) continue;
-      var pos = line.indexOf(',');
-      if (pos<0) continue;
-      var w = line.slice(0,pos).toUpperCase();
-      // strip non-letters WITHOUT regex
-      var letters=[]; for (var k=0;k<w.length;k++){ var ch=w[k]; var L=ch.toLowerCase(); if (L>='a' && L<='z') letters.push(ch); }
-      w = letters.join('');
-      var h = line.slice(pos+1).trim();
-      if (w.length===WORDLEN){ words.push(w); hints[w]=h; }
-    }
-  }catch(e){}
-  if (!words.length){ words = ['BANANA','BUTTER','CHEESE','COOKIE','ORANGE','PIZZAO','TOMATO']; hints = {'BANANA':'Yellow fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','COOKIE':'Baked treat','ORANGE':'Citrus','PIZZAO':'Slice of heaven','TOMATO':'Red salad fruit'}; }
-  var idx = getDailyIndex(words.length);
-  solution = words[idx] || words[0];
-  renderGrid(); loadKeyboard(); autoSizeBoard(); setTimeout(autoSizeBoard,0); setTimeout(autoSizeBoard,250);
-}
-
-function renderGrid(){
-  grid.style.display='grid';
-  grid.style.gridTemplateColumns='repeat('+WORDLEN+', var(--proTileSize,56px))';
-  grid.innerHTML='';
-  for (var i=0;i<MAX_ROWS*WORDLEN;i++){ var t=document.createElement('div'); t.className='tile'; grid.appendChild(t); }
-}
-
-function tileAt(r,c){ return grid.children[r*WORDLEN + c]; }
-function currentGuess(){ var s=''; for (var c=0;c<WORDLEN;c++){ s+= tileAt(currentRow,c).textContent||''; } return s; }
-function push(ch){ if(INPUT_LOCKED||currentCol>=WORDLEN) return; var t=tileAt(currentRow,currentCol); t.textContent=ch; t.classList.add('filled'); currentCol++; }
-function pop(){ if(INPUT_LOCKED||currentCol<=0) return; currentCol--; var t=tileAt(currentRow,currentCol); t.textContent=''; t.classList.remove('filled'); }
-
-function evaluate(g){
-  var res=[], sol=solution.split(''), ga=g.split('');
-  for (var i=0;i<WORDLEN;i++){ if(ga[i]===sol[i]){ res[i]='correct'; sol[i]='*'; ga[i]='_'; } else res[i]='absent'; }
-  for (var j=0;j<WORDLEN;j++){ if(res[j]==='correct') continue; var idx=sol.indexOf(ga[j]); if(idx>-1){ res[j]='present'; sol[idx]='*'; } }
-  return res;
-}
-function paintRow(r,res){ for (var c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add(res[c]); } }
-
-function endGame(win){
-  INPUT_LOCKED=true;
-  try{ showToast(win?'Game Over - You Rock!':'Game Over - Better luck tomorrow'); }catch(e){}
-  try{ window.dispatchEvent(new CustomEvent('fihr:gameover',{detail:{outcome: win?'win':'loss'}})); }catch(e){}
-  try{ if (window.recordGame) window.recordGame(win?'win':'loss', (win? currentRow+1 : MAX_ROWS), !!HINT_USED); }catch(e){}
-  try{ window.confetti && window.confetti({ particleCount: 150, spread: 72, origin: { y: 0.6 } }); }catch(e){}
-}
-
-function submit(){
-  if (currentCol<WORDLEN) return;
-  var guess = currentGuess();
-  var valid = false; for (var i=0;i<words.length;i++){ if(words[i]===guess){ valid=true; break; } }
-  if (!valid){ showToast('Not in list'); return; }
-  var res = evaluate(guess); paintRow(currentRow,res);
-  if (guess===solution){ endGame(true); return; }
-  currentRow++; currentCol=0; if(currentRow>=MAX_ROWS){ endGame(false); }
-}
-
-function onKey(k){ if(INPUT_LOCKED) return; if(k==='⌫'){ pop(); return; } if(k==='ENTER'){ submit(); return; } if(k.length===1 && k>='A' && k<='Z'){ push(k); } }
-
-function loadKeyboard(){
-  var rows=[ ['Q','W','E','R','T','Y','U','I','O','P'], ['A','S','D','F','G','H','J','K','L'], ['ENTER','Z','X','C','V','B','N','M','⌫'] ];
-  keyboard.innerHTML='';
-  for (var i=0;i<rows.length;i++){ var r=document.createElement('div'); r.className='krow';
-    for (var j=0;j<rows[i].length;j++){ var k=rows[i][j]; var b=document.createElement('button'); b.className='key'; if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.textContent=k; b.dataset.key=k; (function(v){ b.addEventListener('click', function(){ onKey(v); }); })(k); r.appendChild(b); }
-    keyboard.appendChild(r);
-  }
-  window.addEventListener('keydown', function(e){ var k=e.key; if(k==='Backspace') k='⌫'; else if(k==='Enter') k='ENTER'; else k=k.toUpperCase(); if(k==='ENTER'||k==='⌫'||(k.length===1 && k>='A' && k<='Z')) onKey(k); });
-}
-
-function showToast(msg){
-  var t=document.getElementById('toast');
-  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='72px'; t.style.background='#111'; t.style.color='#fff'; t.style.padding='.6rem .9rem'; t.style.borderRadius='10px'; t.style.fontWeight='700'; t.style.boxShadow='0 6px 24px rgba(0,0,0,.25)'; t.style.zIndex='100'; }
-  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(function(){ t.style.opacity='0'; }, 1800);
-}
-
-(function setupHint(){
-  var hb=document.getElementById('hintBtn'); var modal=document.getElementById('hintModal'); var cancel=document.getElementById('hintCancel'); var confirm=document.getElementById('hintConfirm');
-  hb.addEventListener('click', function(){ if(HINT_USED) return; modal.classList.remove('hidden'); });
-  var close=function(){ modal.classList.add('hidden'); };
-  cancel.addEventListener('click', close);
-  confirm.addEventListener('click', function(){ if(HINT_USED) return; HINT_USED=true; close();
-    var keepStart = MAX_ROWS - 2;
-    for (var r=0;r<keepStart;r++){ for (var c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add('ghost'); } }
-    if(currentRow<keepStart) currentRow = keepStart;
-    var h=hints[solution]||''; document.getElementById('hintText').textContent = h?('Hint: '+h):'Hint used'; hb.replaceWith(document.getElementById('hintText')); showToast('Only 2 guesses left!');
-  });
-  window.addEventListener('keydown', function(e){ if(e.key==='Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden'); });
-})();
-
-function autoSizeBoard(){
-  try{
-    var root=document.documentElement;
-    var vw=Math.max(root.clientWidth, window.innerWidth||0);
-    var vh=Math.max(root.clientHeight, window.innerHeight||0);
-    var kbd=document.getElementById('keyboard');
-    var banner=document.querySelector('.mode-banner');
-    var controls=document.querySelector('.controls');
-    var hint=document.getElementById('hintText');
-    var bannerH=banner?banner.getBoundingClientRect().height:0;
-    var controlsH=controls?controls.getBoundingClientRect().height:0;
-    var hintH=hint?hint.getBoundingClientRect().height:0;
-    var kbdH=kbd?kbd.getBoundingClientRect().height:0;
-    var margins=42, gap=6;
-    var byHeight = Math.floor((vh - (bannerH+controlsH+hintH+kbdH+margins) - (MAX_ROWS-1)*gap) / MAX_ROWS);
-    var byWidth  = Math.floor(((vw*0.9) - (WORDLEN-1)*gap) / WORDLEN);
-    var size = Math.max(28, Math.min(byHeight, byWidth));
-    root.style.setProperty('--proTileSize', (size>0?size:56)+'px');
-  }catch(e){}
-}
-window.addEventListener('resize', autoSizeBoard);
-window.addEventListener('orientationchange', autoSizeBoard);
-window.addEventListener('DOMContentLoaded', autoSizeBoard);
-
-// Minimal in-page About + Stats hookups (stats modal defined in previous builds)
-document.getElementById('statsBtn').addEventListener('click', function(){});
-document.getElementById('aboutBtn').addEventListener('click', function(){ alert('FIHR Foodle Pro — tasty 6-letter fun!'); });
-
-loadWords();
-</script>
+  <script src="../script.js?v=v5.0.9"></script>
 </body>
 </html>
