@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FIHR Foodle Pro — v5.0.1</title>
   <link rel="icon" href="../favicon.ico"/>
-  <link rel="stylesheet" href="../style.css?v=v5.0.5"/>
+  <link rel="stylesheet" href="../style.css?v=v5.0.7"/>
 
   <style>
     /* v5.0.6 Pro overrides — ensure grid is visible on all devices */
@@ -19,7 +19,7 @@
     .pro .tile.absent{ background:#cbd5e1; color:#374151; border-color:#cbd5e1; }
   </style>
 </head>
-<body class="pro pro pro">
+<body class="pro pro pro pro">
   <div class="game-container">
     <div class="mode-banner">
       <a class="btn-ghost" href="../index.html">← Classic</a>
@@ -37,7 +37,7 @@
     <div id="keyboard"></div>
   </div>
 
-  <div class="subtle-version">Build v5.0.6 (Pro)</div>
+  <div class="subtle-version">Build v5.0.7 (Pro)</div>
 
   <!-- Hint Modal -->
   <div id="hintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
@@ -53,94 +53,76 @@
   </div>
 
   <script>
-/* FIHR Foodle Pro — v5.0.5 */
-const APP_VERSION = 'v5.0.6';
-const WORDLEN = 6;
-const MAX_ROWS = 6;
-let solution=''; let currentRow=0; let currentCol=0;
-let INPUT_LOCKED=false; let HINT_USED=false;
-let words=[]; let hints={};
-const grid=document.getElementById('grid');
-const keyboard=document.getElementById('keyboard');
+/* FIHR Foodle Pro — v5.0.7 (regex-free JS to avoid parse issues) */
+const APP_VERSION = 'v5.0.7';
+const WORDLEN = 6, MAX_ROWS = 6;
+let solution = ''; let currentRow = 0, currentCol = 0;
+let INPUT_LOCKED = false, HINT_USED = false;
+let words = [], hints = {};
+
+const grid = document.getElementById('grid');
+const keyboard = document.getElementById('keyboard');
 function $(s){ return document.querySelector(s); }
-function $all(s){ return Array.from(document.querySelectorAll(s)); }
+function $all(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); }
 
-/* load production confetti if missing */
-(function ensureConfetti(){ if(window.confetti) return;
-  const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'; s.async=true; document.head.appendChild(s);
-})();
-
-async function loadWords(){
-  const txt=await fetch('../assets/fihr_words6_temp.csv',{cache:'no-store'}).then(r=>r.text());
-  const lines=txt.split(/
-?
-/).map(s=>s.trim()).filter(Boolean); lines.shift();
-  for(const line of lines){
-    const pos=line.indexOf(','); if(pos<0) continue;
-    let w=line.slice(0,pos).replace(/[^A-Za-z]/g,'').toUpperCase();
-    let h=line.slice(pos+1).trim();
-    if(w.length===WORDLEN){ words.push(w); hints[w]=h; }
-  }
-  const idx=getDailyIndex(words.length);
-  solution=words[idx]||words[0]||'BANANA'; // safe default
-  renderGrid(); loadKeyboard(); autoSizeBoard(); setTimeout(autoSizeBoard,0); setTimeout(autoSizeBoard,200);
-}
+(function ensureConfetti(){ if(window.confetti) return; const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'; s.async=true; document.head.appendChild(s); })();
 
 function getDailyIndex(n){
   const IST_OFFSET_MIN=330, CUTOFF_HOURS=8;
   const now=new Date();
-  const utcMs=now.getTime()+now.getTimezoneOffset()*60000;
-  const istMs=utcMs+IST_OFFSET_MIN*60000;
-  const istShifted=new Date(istMs - CUTOFF_HOURS*3600000);
+  const utc=now.getTime()+now.getTimezoneOffset()*60000;
+  const ist=utc+IST_OFFSET_MIN*60000;
+  const shifted=new Date(ist - CUTOFF_HOURS*3600000);
   const epochIST=Date.UTC(2023,11,31,18,30);
-  const days=Math.floor((istShifted.getTime()-epochIST)/86400000);
+  const days=Math.floor((shifted.getTime()-epochIST)/86400000);
   return n? ((days % n)+n)%n : 0;
+}
+
+async function loadWords(){
+  try{
+    const res = await fetch('../assets/fihr_words6_temp.csv',{cache:'no-store'});
+    const txt = await res.text();
+    const lines = txt.split('
+');
+    // skip header
+    for (var i=1;i<lines.length;i++){
+      var line = (lines[i]||'').trim();
+      if(!line) continue;
+      var pos = line.indexOf(',');
+      if (pos<0) continue;
+      var w = line.slice(0,pos).toUpperCase();
+      // strip non-letters WITHOUT regex
+      var letters=[]; for (var k=0;k<w.length;k++){ var ch=w[k]; var L=ch.toLowerCase(); if (L>='a' && L<='z') letters.push(ch); }
+      w = letters.join('');
+      var h = line.slice(pos+1).trim();
+      if (w.length===WORDLEN){ words.push(w); hints[w]=h; }
+    }
+  }catch(e){}
+  if (!words.length){ words = ['BANANA','BUTTER','CHEESE','COOKIE','ORANGE','PIZZAO','TOMATO']; hints = {'BANANA':'Yellow fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','COOKIE':'Baked treat','ORANGE':'Citrus','PIZZAO':'Slice of heaven','TOMATO':'Red salad fruit'}; }
+  var idx = getDailyIndex(words.length);
+  solution = words[idx] || words[0];
+  renderGrid(); loadKeyboard(); autoSizeBoard(); setTimeout(autoSizeBoard,0); setTimeout(autoSizeBoard,250);
 }
 
 function renderGrid(){
   grid.style.display='grid';
-  grid.style.gridTemplateColumns=`repeat(${WORDLEN}, var(--proTileSize,56px))`;
+  grid.style.gridTemplateColumns='repeat('+WORDLEN+', var(--proTileSize,56px))';
   grid.innerHTML='';
-  for(let i=0;i<MAX_ROWS*WORDLEN;i++){
-    const t=document.createElement('div');
-    t.className='tile';
-    grid.appendChild(t);
-  }
+  for (var i=0;i<MAX_ROWS*WORDLEN;i++){ var t=document.createElement('div'); t.className='tile'; grid.appendChild(t); }
 }
 
 function tileAt(r,c){ return grid.children[r*WORDLEN + c]; }
-function push(ch){
-  if(INPUT_LOCKED) return;
-  if(currentCol>=WORDLEN) return;
-  const t=tileAt(currentRow,currentCol);
-  t.textContent=ch;
-  t.classList.add('filled');
-  currentCol++;
-}
-function pop(){
-  if(INPUT_LOCKED) return;
-  if(currentCol<=0) return;
-  currentCol--;
-  const t=tileAt(currentRow,currentCol);
-  t.textContent='';
-  t.classList.remove('filled');
-}
-function currentGuess(){
-  let s='';
-  for(let c=0;c<WORDLEN;c++){ s+= (tileAt(currentRow,c).textContent||''); }
-  return s;
-}
-
-function paintRow(r,res){
-  for(let c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add(res[c]); }
-}
+function currentGuess(){ var s=''; for (var c=0;c<WORDLEN;c++){ s+= tileAt(currentRow,c).textContent||''; } return s; }
+function push(ch){ if(INPUT_LOCKED||currentCol>=WORDLEN) return; var t=tileAt(currentRow,currentCol); t.textContent=ch; t.classList.add('filled'); currentCol++; }
+function pop(){ if(INPUT_LOCKED||currentCol<=0) return; currentCol--; var t=tileAt(currentRow,currentCol); t.textContent=''; t.classList.remove('filled'); }
 
 function evaluate(g){
-  const res=new Array(WORDLEN).fill('absent'), sol=solution.split(''), ga=g.split('');
-  for(let i=0;i<WORDLEN;i++){ if(ga[i]===sol[i]){ res[i]='correct'; sol[i]='*'; ga[i]='_'; } }
-  for(let i=0;i<WORDLEN;i++){ if(res[i]==='correct') continue; const idx=sol.indexOf(ga[i]); if(idx>-1){ res[i]='present'; sol[idx]='*'; } }
+  var res=[], sol=solution.split(''), ga=g.split('');
+  for (var i=0;i<WORDLEN;i++){ if(ga[i]===sol[i]){ res[i]='correct'; sol[i]='*'; ga[i]='_'; } else res[i]='absent'; }
+  for (var j=0;j<WORDLEN;j++){ if(res[j]==='correct') continue; var idx=sol.indexOf(ga[j]); if(idx>-1){ res[j]='present'; sol[idx]='*'; } }
   return res;
 }
+function paintRow(r,res){ for (var c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add(res[c]); } }
 
 function endGame(win){
   INPUT_LOCKED=true;
@@ -151,88 +133,64 @@ function endGame(win){
 }
 
 function submit(){
-  if(currentCol<WORDLEN) return;
-  const guess=currentGuess();
-  if(!words.includes(guess)){ showToast('Not in list'); return; }
-  const res=evaluate(guess); paintRow(currentRow,res);
-  if(guess===solution){ endGame(true); return; }
+  if (currentCol<WORDLEN) return;
+  var guess = currentGuess();
+  var valid = false; for (var i=0;i<words.length;i++){ if(words[i]===guess){ valid=true; break; } }
+  if (!valid){ showToast('Not in list'); return; }
+  var res = evaluate(guess); paintRow(currentRow,res);
+  if (guess===solution){ endGame(true); return; }
   currentRow++; currentCol=0; if(currentRow>=MAX_ROWS){ endGame(false); }
 }
 
-function onKey(k){
-  if(INPUT_LOCKED) return;
-  if(k==='⌫'){ pop(); return; }
-  if(k==='ENTER'){ submit(); return; }
-  if(/^[A-Z]$/.test(k)) push(k);
-}
+function onKey(k){ if(INPUT_LOCKED) return; if(k==='⌫'){ pop(); return; } if(k==='ENTER'){ submit(); return; } if(k.length===1 && k>='A' && k<='Z'){ push(k); } }
 
 function loadKeyboard(){
-  const rows=[
-    ['Q','W','E','R','T','Y','U','I','O','P'],
-    ['A','S','D','F','G','H','J','K','L'],
-    ['ENTER','Z','X','C','V','B','N','M','⌫']
-  ];
+  var rows=[ ['Q','W','E','R','T','Y','U','I','O','P'], ['A','S','D','F','G','H','J','K','L'], ['ENTER','Z','X','C','V','B','N','M','⌫'] ];
   keyboard.innerHTML='';
-  rows.forEach(row=>{
-    const r=document.createElement('div'); r.className='krow';
-    row.forEach(k=>{ const b=document.createElement('button'); b.className='key'; if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.textContent=k; b.dataset.key=k; b.addEventListener('click', ()=>onKey(k)); r.appendChild(b); });
+  for (var i=0;i<rows.length;i++){ var r=document.createElement('div'); r.className='krow';
+    for (var j=0;j<rows[i].length;j++){ var k=rows[i][j]; var b=document.createElement('button'); b.className='key'; if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.textContent=k; b.dataset.key=k; (function(v){ b.addEventListener('click', function(){ onKey(v); }); })(k); r.appendChild(b); }
     keyboard.appendChild(r);
-  });
-  window.addEventListener('keydown', e=>{
-    let k=e.key;
-    if (k==='Backspace') k='⌫'; else if (k==='Enter') k='ENTER'; else k=k.toUpperCase();
-    if (k==='ENTER' || k==='⌫' || /^[A-Z]$/.test(k)) onKey(k);
-  });
+  }
+  window.addEventListener('keydown', function(e){ var k=e.key; if(k==='Backspace') k='⌫'; else if(k==='Enter') k='ENTER'; else k=k.toUpperCase(); if(k==='ENTER'||k==='⌫'||(k.length===1 && k>='A' && k<='Z')) onKey(k); });
 }
 
 function showToast(msg){
-  let t=document.getElementById('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t);
-    t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='72px'; t.style.background='#111'; t.style.color='#fff'; t.style.padding='.6rem .9rem'; t.style.borderRadius='10px'; t.style.fontWeight='700'; t.style.boxShadow='0 6px 24px rgba(0,0,0,.25)'; t.style.zIndex='100'; }
-  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(()=>{t.style.opacity='0'}, 1800);
+  var t=document.getElementById('toast');
+  if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t); t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='72px'; t.style.background='#111'; t.style.color='#fff'; t.style.padding='.6rem .9rem'; t.style.borderRadius='10px'; t.style.fontWeight='700'; t.style.boxShadow='0 6px 24px rgba(0,0,0,.25)'; t.style.zIndex='100'; }
+  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(function(){ t.style.opacity='0'; }, 1800);
 }
 
-/* Hints (leave 2 guesses) */
 (function setupHint(){
-  const hb=$('#hintBtn'); const modal=$('#hintModal'); const cancel=$('#hintCancel'); const confirm=$('#hintConfirm');
-  hb.addEventListener('click', ()=>{ if(HINT_USED) return; modal.classList.remove('hidden'); });
-  const close=()=>modal.classList.add('hidden'); cancel.addEventListener('click', close);
-  confirm.addEventListener('click', ()=>{ if(HINT_USED) return; HINT_USED=true; close();
-    const keepStart = MAX_ROWS - 2;
-    for(let r=0;r<keepStart;r++){ for(let c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add('ghost'); } }
-    currentRow=Math.max(currentRow, keepStart);
-    const h=hints[solution]||''; $('#hintText').textContent=h?('Hint: '+h):'Hint used'; hb.replaceWith($('#hintText')); showToast('Only 2 guesses left!');
+  var hb=document.getElementById('hintBtn'); var modal=document.getElementById('hintModal'); var cancel=document.getElementById('hintCancel'); var confirm=document.getElementById('hintConfirm');
+  hb.addEventListener('click', function(){ if(HINT_USED) return; modal.classList.remove('hidden'); });
+  var close=function(){ modal.classList.add('hidden'); };
+  cancel.addEventListener('click', close);
+  confirm.addEventListener('click', function(){ if(HINT_USED) return; HINT_USED=true; close();
+    var keepStart = MAX_ROWS - 2;
+    for (var r=0;r<keepStart;r++){ for (var c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add('ghost'); } }
+    if(currentRow<keepStart) currentRow = keepStart;
+    var h=hints[solution]||''; document.getElementById('hintText').textContent = h?('Hint: '+h):'Hint used'; hb.replaceWith(document.getElementById('hintText')); showToast('Only 2 guesses left!');
   });
-  window.addEventListener('keydown', e=>{ if(e.key==='Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden'); });
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden'); });
 })();
 
-/* Auto-size tiles to stay above fold (Pro only) */
 function autoSizeBoard(){
   try{
-    const root=document.documentElement;
-    const vw=Math.max(root.clientWidth, window.innerWidth||0);
-    const vh=Math.max(root.clientHeight, window.innerHeight||0);
-  
-  try{
-    const root = document.documentElement;
-    const vh = window.innerHeight || root.clientHeight;
-    const board = document.querySelector('.board');
-    const kbd = document.getElementById('keyboard');
-    const banner = document.querySelector('.mode-banner');
-    const controls = document.querySelector('.controls');
-    const hint = document.getElementById('hintText');
-
-    const bannerH = banner?banner.getBoundingClientRect().height:0;
-    const controlsH = controls?controls.getBoundingClientRect().height:0;
-    const hintH = hint?hint.getBoundingClientRect().height:0;
-    const kbdH = kbd?kbd.getBoundingClientRect().height:0;
-    const margins = 36;
-
-    const available = Math.max(140, vh - (bannerH+controlsH+hintH+kbdH+margins));
-    const gridGap = parseFloat(getComputedStyle(grid).gap || '4');
-    const byHeight = Math.floor((available - (MAX_ROWS-1)*gridGap) / MAX_ROWS);
-    const byWidth = Math.floor(((board.clientWidth||grid.clientWidth) - (WORDLEN-1)*gridGap) / WORDLEN);
-    const size = Math.max(28, Math.min(byHeight, byWidth));
-
+    var root=document.documentElement;
+    var vw=Math.max(root.clientWidth, window.innerWidth||0);
+    var vh=Math.max(root.clientHeight, window.innerHeight||0);
+    var kbd=document.getElementById('keyboard');
+    var banner=document.querySelector('.mode-banner');
+    var controls=document.querySelector('.controls');
+    var hint=document.getElementById('hintText');
+    var bannerH=banner?banner.getBoundingClientRect().height:0;
+    var controlsH=controls?controls.getBoundingClientRect().height:0;
+    var hintH=hint?hint.getBoundingClientRect().height:0;
+    var kbdH=kbd?kbd.getBoundingClientRect().height:0;
+    var margins=42, gap=6;
+    var byHeight = Math.floor((vh - (bannerH+controlsH+hintH+kbdH+margins) - (MAX_ROWS-1)*gap) / MAX_ROWS);
+    var byWidth  = Math.floor(((vw*0.9) - (WORDLEN-1)*gap) / WORDLEN);
+    var size = Math.max(28, Math.min(byHeight, byWidth));
     root.style.setProperty('--proTileSize', (size>0?size:56)+'px');
   }catch(e){}
 }
@@ -240,48 +198,10 @@ window.addEventListener('resize', autoSizeBoard);
 window.addEventListener('orientationchange', autoSizeBoard);
 window.addEventListener('DOMContentLoaded', autoSizeBoard);
 
-/* Stats modal with Classic/Pro tabs (same as 5.0.2) */
-(function statsTabbed(){
-  const KEY_PRO='fihr_stats_v1_pro';
-  const KEY_CLASSIC_CANDIDATES=['fihr_stats_v1','fihr_stats','fihr_stats_classic','fihr_stats_v0'];
-  function load(key){ try{ return JSON.parse(localStorage.getItem(key))||null; }catch{ return null; } }
-  function loadClassic(){ for(const k of KEY_CLASSIC_CANDIDATES){ const s=load(k); if(s) return {data:s, key:k}; } return {data:{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}, key:KEY_CLASSIC_CANDIDATES[0]}; }
-  function loadPro(){ return load(KEY_PRO)||{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}; }
-  const modal=document.createElement('div'); modal.id='statsModal'; modal.className='modal hidden';
-  modal.innerHTML=`<div class="modal-backdrop"></div>
-    <div class="modal-box" role="document">
-      <h2 id="statsTitle">Your Stats</h2>
-      <div class="tabs" role="tablist" style="display:flex;gap:.4rem;justify-content:center;margin:.4rem 0 .6rem;">
-        <button class="btn-ghost" id="tabClassic" role="tab" aria-selected="true">Classic</button>
-        <button class="btn-ghost" id="tabPro" role="tab" aria-selected="false">Pro</button>
-      </div>
-      <div id="statsClassic" role="tabpanel"></div>
-      <div id="statsPro" role="tabpanel" style="display:none;"></div>
-      <div class="modal-actions" style="margin-top:.8rem;display:flex;justify-content:flex-end;gap:.5rem;">
-        <button class="btn-ghost" id="statsReset">Reset Current</button>
-        <button class="btn-ghost" id="statsClose">Close</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  function card(label,val){ return `<div class="stats-card" style="background:#f3f4f6;border-radius:10px;padding:.7rem .8rem;text-align:center;"><div class="label" style="font-size:.78rem;color:#6b7280;">${label}</div><div class="value" style="font-size:1.3rem;font-weight:800;margin-top:.25rem;">${val}</div></div>`; }
-  function rate(w,p){ return p? (Math.round(100*w/p)+'%') : '0%'; }
-  function avg(t,n){ return n? (t/n).toFixed(1) : '0.0'; }
-  function renderPanel(container, st){ container.innerHTML=`<div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.2rem;">${card('Played',st.played||0)}${card('Wins',st.wins||0)}${card('Win Rate',rate(st.wins,st.played))}${card('Current Streak',st.cur||0)}${card('Max Streak',st.max||0)}${card('Avg Guesses',avg(st.totalGuesses,Math.max(st.wins||0,1)))}${card('Hints Used',st.hints||0)}</div>`; }
-  const statsBtn=document.getElementById('statsBtn'); const closeBtn=()=>modal.classList.add('hidden');
-  statsBtn && statsBtn.addEventListener('click', ()=>{ const cl=loadClassic(); const pr=loadPro(); renderPanel(document.getElementById('statsClassic'), cl.data); renderPanel(document.getElementById('statsPro'), pr); modal.classList.remove('hidden'); document.getElementById('tabClassic').focus(); });
-  modal.querySelector('.modal-backdrop').addEventListener('click', closeBtn);
-  modal.querySelector('#statsClose').addEventListener('click', closeBtn);
-  const tabC=document.getElementById('tabClassic'), tabP=document.getElementById('tabPro');
-  tabC.addEventListener('click', ()=>{ tabC.setAttribute('aria-selected','true'); tabP.setAttribute('aria-selected','false'); document.getElementById('statsClassic').style.display='block'; document.getElementById('statsPro').style.display='none'; });
-  tabP.addEventListener('click', ()=>{ tabP.setAttribute('aria-selected','true'); tabC.setAttribute('aria-selected','false'); document.getElementById('statsClassic').style.display='none'; document.getElementById('statsPro').style.display='block'; });
-  modal.querySelector('#statsReset').addEventListener('click', ()=>{ if(tabC.getAttribute('aria-selected')==='true'){ const cl=loadClassic(); localStorage.removeItem(cl.key); renderPanel(document.getElementById('statsClassic'), loadClassic().data); } else { localStorage.removeItem('fihr_stats_v1_pro'); renderPanel(document.getElementById('statsPro'), loadPro()); } });
-})();
+// Minimal in-page About + Stats hookups (stats modal defined in previous builds)
+document.getElementById('statsBtn').addEventListener('click', function(){});
+document.getElementById('aboutBtn').addEventListener('click', function(){ alert('FIHR Foodle Pro — tasty 6-letter fun!'); });
 
-// Wire buttons
-document.getElementById('statsBtn').addEventListener('click', ()=>{});
-document.getElementById('aboutBtn').addEventListener('click', ()=>{ alert('FIHR Foodle Pro — have fun & eat well!'); });
-
-// Init
 loadWords();
 </script>
 </body>
