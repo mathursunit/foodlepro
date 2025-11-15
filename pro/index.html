@@ -1,12 +1,8 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>FIHR Foodle — Pro</title>
-<link rel="stylesheet" href="../style.css?v=v6.0.3"/>
-
-<!-- v6.0.3 safety styles -->
+<link rel="stylesheet" href="../style.css?v=v6.0.4"/>
+<!-- v6.0.4 safety styles -->
 <style>
 :root{--tileSize:56px}
 .mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
@@ -41,14 +37,12 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
-</head>
-<body class="pro">
+</head><body class="pro">
 <nav class="mode-tabs" role="tablist" aria-label="Game modes">
-  <a class="tab" href="../" role="tab" aria-selected="false">Classic</a>
-  <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>
+  <a class="tab" href="#" role="tab" aria-selected="false" data-mode="classic">Classic</a>
+  <a class="tab active" href="#" role="tab" aria-selected="true" data-mode="pro">Pro</a>
   <span class="tab-indicator" aria-hidden="true"></span>
 </nav>
-
 <div class="container">
   <div class="next"><span id="countdown">Next word in …</span></div>
   <div class="header"><div class="logo">FIHR</div><div class="logo">Foodle Pro</div></div>
@@ -59,64 +53,56 @@
     <button id="statsBtn" class="btn icon-btn" title="Stats" aria-label="Stats">📊</button>
     <button id="aboutBtn" class="btn icon-btn" title="About" aria-label="About">ℹ️</button>
   </div>
-  <div class="legend">
-    <span><span class="dot" style="background:#a78bfa"></span>Correct</span>
-    <span><span class="dot" style="background:#22d3ee"></span>Present</span>
-    <span><span class="dot" style="background:#475569"></span>Absent</span>
-  </div>
+  <div class="legend"><span><span class="dot" style="background:#a78bfa"></span>Correct</span><span><span class="dot" style="background:#22d3ee"></span>Present</span><span><span class="dot" style="background:#475569"></span>Absent</span></div>
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-
-<div class="watermark">Build v6.0.3</div>
-
+<div class="watermark">Build v6.0.4</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
-  <div class="panel">
-    <h2 id="hintTitle">Use a hint?</h2>
-    <p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
-    <div class="actions">
-      <button class="btn" id="hintCancel">Cancel</button>
-      <button class="btn" id="hintConfirm">Use Hint</button>
-    </div>
+  <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
+    <div class="actions"><button class="btn" id="hintCancel">Cancel</button><button class="btn" id="hintConfirm">Use Hint</button></div>
   </div>
 </div>
-
 <div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-  <div class="bg" data-close="1"></div>
-  <div class="panel">
-    <h2 id="aboutTitle">About Foodle Pro</h2>
-    <p>Hungry for 6‑letter glory? 🥇</p>
-    <div class="actions"><button class="btn" data-close="1">Close</button></div>
-  </div>
-</div>
-
+  <div class="bg" data-close="1"></div><div class="panel"><h2 id="aboutTitle">About Foodle Pro</h2><p>Hungry for 6‑letter glory? 🥇</p>
+    <div class="actions"><button class="btn" data-close="1">Close</button></div></div></div>
 <div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
   <div class="bg" data-close="1"></div>
-  <div class="panel">
-    <h2 id="statsTitle">Your Pro Stats</h2>
-    <div id="statsBody" style="margin:.5rem 0"></div>
-    <div class="actions">
-      <button class="btn" id="resetStats">Reset</button>
-      <button class="btn" data-close="1">Close</button>
-    </div>
-  </div>
-</div>
-
-<script src="pro.js?v=v6.0.3"></script>
-
+  <div class="panel"><h2 id="statsTitle">Your Pro Stats</h2><div id="statsBody" style="margin:.5rem 0"></div>
+    <div class="actions"><button class="btn" id="resetStats">Reset</button><button class="btn" data-close="1">Close</button></div></div></div>
+<script src="pro.js?v=v6.0.4"></script>
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.3';const all=document.querySelectorAll('.watermark');
-    if(all.length>1){for(let i=1;i<all.length;i++) all[i].remove();}
-    let m=all[0]; if(!m){m=document.createElement('div');m.className='watermark';document.body.appendChild(m);} m.textContent=W;
-    const nav=document.querySelector('.mode-tabs'), ind=document.querySelector('.mode-tabs .tab-indicator'), active=document.querySelector('.mode-tabs .tab.active');
-    if(nav && ind && active){ const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px';}; setTimeout(set,0); addEventListener('resize', set); }
+    const W='Build v6.0.4'; const all=document.querySelectorAll('.watermark');
+    if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
+    let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
+    m.textContent=W;
+    const nav=document.querySelector('.mode-tabs'); const ind=document.querySelector('.mode-tabs .tab-indicator'); const active=document.querySelector('.mode-tabs .tab.active');
+    if(nav && ind && active){ const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; }; setTimeout(set,0); addEventListener('resize', set); }
   }catch(e){}
 })();
 </script>
 
-</body>
-</html>
+<script>
+(function(){
+  function basePath(){
+    var p = location.pathname;
+    if(!p.endsWith('/')){ p = p.replace(/[^\/]*$/, ''); }
+    if(/\/pro\/$/.test(p)){ return p.replace(/\/pro\/$/, '/'); }
+    return p;
+  }
+  function go(mode){
+    var base = basePath();
+    var dest = mode==='pro' ? base + 'pro/' : base;
+    location.assign(dest);
+  }
+  document.querySelectorAll('.mode-tabs .tab[data-mode]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); go(a.getAttribute('data-mode')); });
+  });
+})();
+</script>
+
+</body></html>

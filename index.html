@@ -13,7 +13,7 @@
 <link href="logo.png" rel="apple-touch-icon"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="FunWords" name="apple-mobile-web-app-title"/><meta content="default" name="apple-mobile-web-app-status-bar-style"/><link href="/icons/icon-120x120.png" rel="apple-touch-icon" sizes="120x120"/><link href="/icons/icon-152x152.png" rel="apple-touch-icon" sizes="152x152"/><link href="/icons/icon-167x167.png" rel="apple-touch-icon" sizes="167x167"/><link href="/icons/icon-180x180.png" rel="apple-touch-icon" sizes="180x180"/><link href="/splash/launch-640x1136.png" media="(device-width: 320px)" rel="apple-touch-startup-image"/><link href="/splash/launch-750x1334.png" media="(device-width: 375px)" rel="apple-touch-startup-image"/><link href="/splash/launch-1242x2208.png" media="(device-width: 414px)" rel="apple-touch-startup-image"/><link href="/splash/launch-1536x2048.png" media="(device-width: 768px)" rel="apple-touch-startup-image"/><link href="/splash/launch-1668x2224.png" media="(device-width: 834px)" rel="apple-touch-startup-image"/><link href="/splash/launch-2048x2732.png" media="(device-width: 1024px)" rel="apple-touch-startup-image"/>  <link rel="icon" href="favicon.ico">
 </head>
 <body tabindex="0">
-<!-- v6.0.3 safety styles -->
+<!-- v6.0.4 safety styles -->
 <style>
 :root{--tileSize:56px}
 .mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
@@ -46,7 +46,7 @@
 .btn{background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:.6rem .9rem;font-weight:800}
 .watermark{position:fixed;right:10px;bottom:8px;color:#94a3b8;font-weight:800}
 </style>
-<nav class="mode-tabs" role="tablist" aria-label="Game modes"><a class="tab active" href="#" role="tab" aria-selected="true">Classic</a><a class="tab" href="./pro/" role="tab" aria-selected="false">Pro</a><span class="tab-indicator" aria-hidden="true"></span></nav>
+<nav class="mode-tabs" role="tablist" aria-label="Game modes"><a class="tab active" href="#" role="tab" aria-selected="true" data-mode="classic">Classic</a><a class="tab" href="#" role="tab" aria-selected="false" data-mode="pro">Pro</a><span class="tab-indicator" aria-hidden="true"></span></nav>
 
 <div id="menu-root">
   <button id="menu-btn" aria-label="Menu" title="Menu">⋯</button>
@@ -143,7 +143,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-<script src="script.js?v=v6.0.3"></script>
+<script src="script.js?v=v6.0.4"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -152,24 +152,44 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-  <script src="hint-addon.js?v=v6.0.3"></script>
-  <script src="ui-addon.js?v=v6.0.3"></script>
-  <script src="stats-addon.js?v=v6.0.3"></script>
-  <script src="social-addon.js?v=v6.0.3"></script>
-  <script src="menu-addon.js?v=v6.0.3"></script>
-  <script src="cleanup-addon.js?v=v6.0.3"></script>
-  <script src="confetti-fix.js?v=v6.0.3"></script>
+  <script src="hint-addon.js?v=v6.0.4"></script>
+  <script src="ui-addon.js?v=v6.0.4"></script>
+  <script src="stats-addon.js?v=v6.0.4"></script>
+  <script src="social-addon.js?v=v6.0.4"></script>
+  <script src="menu-addon.js?v=v6.0.4"></script>
+  <script src="cleanup-addon.js?v=v6.0.4"></script>
+  <script src="confetti-fix.js?v=v6.0.4"></script>
 
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.3';const all=document.querySelectorAll('.watermark');
-    if(all.length>1){for(let i=1;i<all.length;i++) all[i].remove();}
-    let m=all[0]; if(!m){m=document.createElement('div');m.className='watermark';document.body.appendChild(m);} m.textContent=W;
-    const nav=document.querySelector('.mode-tabs'), ind=document.querySelector('.mode-tabs .tab-indicator'), active=document.querySelector('.mode-tabs .tab.active');
-    if(nav && ind && active){ const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px';}; setTimeout(set,0); addEventListener('resize', set); }
+    const W='Build v6.0.4'; const all=document.querySelectorAll('.watermark');
+    if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
+    let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
+    m.textContent=W;
+    const nav=document.querySelector('.mode-tabs'); const ind=document.querySelector('.mode-tabs .tab-indicator'); const active=document.querySelector('.mode-tabs .tab.active');
+    if(nav && ind && active){ const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; }; setTimeout(set,0); addEventListener('resize', set); }
   }catch(e){}
+})();
+</script>
+
+<script>
+(function(){
+  function basePath(){
+    var p = location.pathname;
+    if(!p.endsWith('/')){ p = p.replace(/[^\/]*$/, ''); }
+    if(/\/pro\/$/.test(p)){ return p.replace(/\/pro\/$/, '/'); }
+    return p;
+  }
+  function go(mode){
+    var base = basePath();
+    var dest = mode==='pro' ? base + 'pro/' : base;
+    location.assign(dest);
+  }
+  document.querySelectorAll('.mode-tabs .tab[data-mode]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); go(a.getAttribute('data-mode')); });
+  });
 })();
 </script>
 

@@ -1,5 +1,5 @@
 
-/* Foodle Pro v6.0.3 */
+/* Foodle Pro v6.0.4 */
 (function(){
 'use strict';
 const WORDLEN=6, MAX_ROWS=6;
@@ -13,9 +13,7 @@ const hintText=document.getElementById('hintText');
 let words=[], hints={}, solution='', row=0, col=0, LOCK=false, HINT_USED=false;
 const CSV_PATH='../assets/fihr_food_words_pro_v1.csv';
 
-/* Tabs indicator */
 (function(){const ind=document.querySelector('.mode-tabs .tab-indicator');const active=document.querySelector('.mode-tabs .tab.active');if(ind&&active){const set=()=>{ind.style.left=(active.offsetLeft + (active.offsetWidth-ind.offsetWidth)/2)+'px';};setTimeout(set,0);addEventListener('resize', set);}})();
-/* Countdown to 8 AM IST */
 (function(){const el=document.getElementById('countdown');if(!el)return;function until(){const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;const ist=new Date(utc+330*60000);ist.setHours(8,0,0,0);if(ist.getTime()<=utc+330*60000)ist.setDate(ist.getDate()+1);return ist.getTime()-(utc+330*60000);}function fmt(ms){const s=Math.floor(ms/1000),h=(''+Math.floor(s/3600)).padStart(2,'0'),m=(''+Math.floor(s%3600/60)).padStart(2,'0'),ss=(''+(s%60)).padStart(2,'0');return h+':'+m+':'+ss;}function tick(){el.textContent='Next word in '+fmt(until());requestAnimationFrame(tick);}tick();})();
 
 function dailyIndex(n){const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;const ist= utc + 330*60000;const epoch=Date.UTC(2024,0,1,0,0,0);const days=Math.floor((ist-8*3600000-epoch)/86400000);return n?((days % n)+n)%n:0;}
@@ -52,6 +50,15 @@ document.getElementById('hintCancel').addEventListener('click',()=>document.getE
 document.getElementById('hintConfirm').addEventListener('click',()=>{document.getElementById('hintModal').classList.remove('open');useHint();});
 statsBtn&&statsBtn.addEventListener('click',openStats);
 aboutBtn&&aboutBtn.addEventListener('click',()=>document.getElementById('aboutModal').classList.add('open'));
+
+function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
+function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
+function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
+
+addEventListener('keydown', e=>{let k=e.key;if(k==='Backspace') k='⌫'; else if(k==='Enter') k='ENTER'; else k=k.toUpperCase();if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
+
+function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
+addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
 
 renderGrid();loadKeyboard();autoSize();(async()=>{await loadWords();spinner.style.display='none';})();
 })();
