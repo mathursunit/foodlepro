@@ -4,42 +4,36 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FIHR Foodle — Pro</title>
-  <link rel="stylesheet" href="../style.css?v=v5.0.9"/>
+  <link rel="stylesheet" href="../style.css?v=v6.0.0"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
-  <script>
-    document.addEventListener('DOMContentLoaded',()=>{
-      try{const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);} }catch(e){}
-    });
-    window.GAME_MODE='pro';
-    window.WORDLEN=6;
-    window.MAX_ROWS=6;
-    window.APP_VERSION='v5.0.9';
-  </script>
 </head>
 <body class="pro">
+  <nav class="mode-tabs" role="tablist" aria-label="Game modes">
+    <a class="tab" href="../index.html" role="tab" aria-selected="false">Classic</a>
+    <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>
+    <span class="tab-indicator" aria-hidden="true"></span>
+  </nav>
+
   <div class="container">
     <div class="next"><span id="countdown">Next word in …</span></div>
     <div class="header">
-      <a class="badge" href="../index.html"><span class="n">5</span>Classic</a>
-      <a class="badge" href="#"><span class="n">6</span>Pro</a>
-    </div>
-    <div class="brand">
       <div class="logo">FIHR</div>
       <div class="logo">Foodle Pro</div>
     </div>
 
+    <div id="spinner" class="next" style="display:none">Loading word list…</div>
     <div class="board"><div class="grid" id="grid"></div></div>
 
     <div class="controls">
-      <button id="hintBtn" class="btn icon-btn" title="Hint">💡</button>
-      <button id="statsBtn" class="btn icon-btn" title="Stats">📊</button>
-      <button id="aboutBtn" class="btn icon-btn" title="About">ℹ️</button>
+      <button id="hintBtn" class="btn icon-btn" title="Hint" aria-label="Hint">💡</button>
+      <button id="statsBtn" class="btn icon-btn" title="Stats" aria-label="Stats">📊</button>
+      <button id="aboutBtn" class="btn icon-btn" title="About" aria-label="About">ℹ️</button>
     </div>
 
     <div class="legend">
-      <span><span class="dot" style="background:var(--good)"></span>Correct</span>
-      <span><span class="dot" style="background:var(--present)"></span>Present</span>
-      <span><span class="dot" style="background:var(--absent)"></span>Absent</span>
+      <span><span class="dot" style="background:#a78bfa"></span>Correct</span>
+      <span><span class="dot" style="background:#22d3ee"></span>Present</span>
+      <span><span class="dot" style="background:#475569"></span>Absent</span>
     </div>
 
     <div id="hintText" class="next" style="min-height:24px;"></div>
@@ -47,7 +41,7 @@
     <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
   </div>
 
-  <div class="watermark">Build v5.0.9 (Pro)</div>
+  <div class="watermark">Build v6.0.0</div>
 
   <!-- Hint modal -->
   <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
@@ -62,38 +56,29 @@
     </div>
   </div>
 
-  <!-- Stats modal (shared, tabbed) -->
+  <!-- About modal -->
+  <div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+    <div class="bg" data-close="1"></div>
+    <div class="panel">
+      <h2 id="aboutTitle">About Foodle Pro</h2>
+      <p>Hungry for 6‑letter glory? 🥇</p>
+      <div class="actions"><button class="btn" data-close="1">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Stats modal (simple Pro-only for now) -->
   <div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
     <div class="bg" data-close="1"></div>
     <div class="panel">
-      <h2 id="statsTitle">Your Stats</h2>
-      <div class="actions" style="justify-content:center;margin-bottom:10px">
-        <button class="btn" id="tabClassic">Classic</button>
-        <button class="btn" id="tabPro">Pro</button>
-      </div>
-      <div id="statsClassic"></div>
-      <div id="statsPro" style="display:none"></div>
+      <h2 id="statsTitle">Your Pro Stats</h2>
+      <div id="statsBody" style="margin:.5rem 0"></div>
       <div class="actions">
-        <button class="btn" id="resetStats">Reset Current</button>
+        <button class="btn" id="resetStats">Reset</button>
         <button class="btn" data-close="1">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- About modal -->
-  <div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-    <div class="bg" data-close="1"></div>
-    <div class="panel">
-      <h2 id="aboutTitle">About FIHR Foodle Pro</h2>
-      <p>Hungry for 6‑letter glory? 🥇</p>
-      <div class="linkbar"><span>Follow us on:</span>
-        <a class="sicon" href="https://www.instagram.com/foodiesinhydreloaded/" target="_blank" rel="noopener" title="Instagram">📷</a>
-        <a class="sicon" href="https://www.facebook.com/groups/foodiesinhyd" target="_blank" rel="noopener" title="Facebook">📘</a>
-      </div>
-      <div class="actions"><button class="btn" data-close="1">Close</button></div>
-    </div>
-  </div>
-
-  <script src="../script.js?v=v5.0.9"></script>
+  <script src="pro.js?v=v6.0.0"></script>
 </body>
 </html>
