@@ -6,8 +6,20 @@
   <title>FIHR Foodle Pro — v5.0.1</title>
   <link rel="icon" href="../favicon.ico"/>
   <link rel="stylesheet" href="../style.css?v=v5.0.5"/>
+
+  <style>
+    /* v5.0.6 Pro overrides — ensure grid is visible on all devices */
+    .pro .board{ display:flex; justify-content:center; margin:.25rem auto .5rem; width:100%; }
+    .pro .grid{ display:grid; gap:6px; }
+    .pro .tile{ width:var(--proTileSize,56px); height:var(--proTileSize,56px); min-width:28px; min-height:28px;
+                background:#f1f5f9; border:2px solid #d1d5db; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.1rem; }
+    .pro .tile.filled{ border-color:#cbd5e1; }
+    .pro .tile.correct{ background:#8b5cf6; color:#fff; border-color:#8b5cf6; }
+    .pro .tile.present{ background:#22d3ee; color:#083344; border-color:#22d3ee; }
+    .pro .tile.absent{ background:#cbd5e1; color:#374151; border-color:#cbd5e1; }
+  </style>
 </head>
-<body class="pro pro">
+<body class="pro pro pro">
   <div class="game-container">
     <div class="mode-banner">
       <a class="btn-ghost" href="../index.html">← Classic</a>
@@ -25,7 +37,7 @@
     <div id="keyboard"></div>
   </div>
 
-  <div class="subtle-version">Build v5.0.5 (Pro)</div>
+  <div class="subtle-version">Build v5.0.6 (Pro)</div>
 
   <!-- Hint Modal -->
   <div id="hintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
@@ -42,7 +54,7 @@
 
   <script>
 /* FIHR Foodle Pro — v5.0.5 */
-const APP_VERSION = 'v5.0.5';
+const APP_VERSION = 'v5.0.6';
 const WORDLEN = 6;
 const MAX_ROWS = 6;
 let solution=''; let currentRow=0; let currentCol=0;
@@ -60,7 +72,8 @@ function $all(s){ return Array.from(document.querySelectorAll(s)); }
 
 async function loadWords(){
   const txt=await fetch('../assets/fihr_words6_temp.csv',{cache:'no-store'}).then(r=>r.text());
-  const lines=txt.split(/?
+  const lines=txt.split(/
+?
 /).map(s=>s.trim()).filter(Boolean); lines.shift();
   for(const line of lines){
     const pos=line.indexOf(','); if(pos<0) continue;
@@ -86,7 +99,7 @@ function getDailyIndex(n){
 
 function renderGrid(){
   grid.style.display='grid';
-  grid.style.gridTemplateColumns=`repeat(${WORDLEN}, 1fr)`;
+  grid.style.gridTemplateColumns=`repeat(${WORDLEN}, var(--proTileSize,56px))`;
   grid.innerHTML='';
   for(let i=0;i<MAX_ROWS*WORDLEN;i++){
     const t=document.createElement('div');
@@ -194,6 +207,11 @@ function showToast(msg){
 
 /* Auto-size tiles to stay above fold (Pro only) */
 function autoSizeBoard(){
+  try{
+    const root=document.documentElement;
+    const vw=Math.max(root.clientWidth, window.innerWidth||0);
+    const vh=Math.max(root.clientHeight, window.innerHeight||0);
+  
   try{
     const root = document.documentElement;
     const vh = window.innerHeight || root.clientHeight;
