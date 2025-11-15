@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FIHR Foodle Pro — v5.0.1</title>
   <link rel="icon" href="../favicon.ico"/>
-  <link rel="stylesheet" href="../style.css?v=v5.0.4"/>
+  <link rel="stylesheet" href="../style.css?v=v5.0.5"/>
 </head>
 <body class="pro pro">
   <div class="game-container">
@@ -21,11 +21,11 @@
     </div>
 
     <div id="hintText" class="hint-label"></div>
-    <div id="grid"></div>
+    <div class="board"><div class="grid" id="grid"></div></div>
     <div id="keyboard"></div>
   </div>
 
-  <div class="subtle-version">Build v5.0.4 (Pro)</div>
+  <div class="subtle-version">Build v5.0.5 (Pro)</div>
 
   <!-- Hint Modal -->
   <div id="hintModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
@@ -41,8 +41,8 @@
   </div>
 
   <script>
-/* FIHR Foodle Pro — v5.0.2 */
-const APP_VERSION = 'v5.0.4';
+/* FIHR Foodle Pro — v5.0.5 */
+const APP_VERSION = 'v5.0.5';
 const WORDLEN = 6;
 const MAX_ROWS = 6;
 let solution=''; let currentRow=0; let currentCol=0;
@@ -53,19 +53,14 @@ const keyboard=document.getElementById('keyboard');
 function $(s){ return document.querySelector(s); }
 function $all(s){ return Array.from(document.querySelectorAll(s)); }
 
-/* Load confetti lib if missing (production-ready) */
-(function ensureConfetti(){
-  if (window.confetti) return;
-  const s=document.createElement('script');
-  s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js';
-  s.async=true;
-  document.head.appendChild(s);
+/* load production confetti if missing */
+(function ensureConfetti(){ if(window.confetti) return;
+  const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js'; s.async=true; document.head.appendChild(s);
 })();
 
 async function loadWords(){
   const txt=await fetch('../assets/fihr_words6_temp.csv',{cache:'no-store'}).then(r=>r.text());
-  const lines=txt.split(/
-?
+  const lines=txt.split(/?
 /).map(s=>s.trim()).filter(Boolean); lines.shift();
   for(const line of lines){
     const pos=line.indexOf(','); if(pos<0) continue;
@@ -74,8 +69,8 @@ async function loadWords(){
     if(w.length===WORDLEN){ words.push(w); hints[w]=h; }
   }
   const idx=getDailyIndex(words.length);
-  solution=words[idx]||words[0];
-  renderGrid(); loadKeyboard(); autoSizeBoard(); setTimeout(autoSizeBoard, 0); setTimeout(autoSizeBoard, 200);
+  solution=words[idx]||words[0]||'BANANA'; // safe default
+  renderGrid(); loadKeyboard(); autoSizeBoard(); setTimeout(autoSizeBoard,0); setTimeout(autoSizeBoard,200);
 }
 
 function getDailyIndex(n){
@@ -90,112 +85,152 @@ function getDailyIndex(n){
 }
 
 function renderGrid(){
-  grid.style.gridTemplateColumns=`repeat(${WORDLEN},1fr)`; grid.innerHTML='';
-  for(let r=0;r<MAX_ROWS;r++){ const row=document.createElement('div'); row.className='row'; grid.appendChild(row);
-    for(let c=0;c<WORDLEN;c++){ const t=document.createElement('div'); t.className='tile'; row.appendChild(t); } }
+  grid.style.display='grid';
+  grid.style.gridTemplateColumns=`repeat(${WORDLEN}, 1fr)`;
+  grid.innerHTML='';
+  for(let i=0;i<MAX_ROWS*WORDLEN;i++){
+    const t=document.createElement('div');
+    t.className='tile';
+    grid.appendChild(t);
+  }
 }
 
-function loadKeyboard(){
-  const keys=['Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','ENTER','Z','X','C','V','B','N','M','⌫'];
-  keyboard.innerHTML='';
-  keys.forEach(k=>{ const b=document.createElement('button'); b.textContent=k; b.dataset.key=k;
-    if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.addEventListener('click', onKey); keyboard.appendChild(b); });
-  window.addEventListener('keydown', e=>{ let k=e.key.toUpperCase(); if(k==='BACKSPACE') k='⌫'; if(k==='ENTER'||/^[A-Z]$/.test(k)) onKey({target:{dataset:{key:k}}}); });
+function tileAt(r,c){ return grid.children[r*WORDLEN + c]; }
+function push(ch){
+  if(INPUT_LOCKED) return;
+  if(currentCol>=WORDLEN) return;
+  const t=tileAt(currentRow,currentCol);
+  t.textContent=ch;
+  t.classList.add('filled');
+  currentCol++;
+}
+function pop(){
+  if(INPUT_LOCKED) return;
+  if(currentCol<=0) return;
+  currentCol--;
+  const t=tileAt(currentRow,currentCol);
+  t.textContent='';
+  t.classList.remove('filled');
+}
+function currentGuess(){
+  let s='';
+  for(let c=0;c<WORDLEN;c++){ s+= (tileAt(currentRow,c).textContent||''); }
+  return s;
 }
 
-function onKey(e){ if(INPUT_LOCKED) return; const k=e.target.dataset.key;
-  if(k==='⌫'){ pop(); return; } if(k==='ENTER'){ submit(); return; } if(/^[A-Z]$/.test(k)) push(k); }
-function currentTiles(){ return $all('.row')[currentRow].querySelectorAll('.tile'); }
-function push(ch){ const tiles=currentTiles(); if(currentCol>=WORDLEN) return; tiles[currentCol].textContent=ch; tiles[currentCol].classList.add('filled'); currentCol++; }
-function pop(){ if(currentCol<=0) return; const tiles=currentTiles(); currentCol--; tiles[currentCol].textContent=''; tiles[currentCol].classList.remove('filled'); }
+function paintRow(r,res){
+  for(let c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add(res[c]); }
+}
 
-function evaluate(g){ const res=new Array(WORDLEN).fill('absent'), sol=solution.split(''), ga=g.split('');
+function evaluate(g){
+  const res=new Array(WORDLEN).fill('absent'), sol=solution.split(''), ga=g.split('');
   for(let i=0;i<WORDLEN;i++){ if(ga[i]===sol[i]){ res[i]='correct'; sol[i]='*'; ga[i]='_'; } }
   for(let i=0;i<WORDLEN;i++){ if(res[i]==='correct') continue; const idx=sol.indexOf(ga[i]); if(idx>-1){ res[i]='present'; sol[idx]='*'; } }
-  return res; }
-
-function paintRow(r,res){ const tiles=$all('.row')[r].querySelectorAll('.tile'); res.forEach((cls,i)=>tiles[i].classList.add(cls)); }
+  return res;
+}
 
 function endGame(win){
   INPUT_LOCKED=true;
-  try{ if (typeof showToast==='function'){ showToast(win ? 'Game Over - You Rock!' : 'Game Over - Better luck tomorrow'); } }catch(e){}
+  try{ showToast(win?'Game Over - You Rock!':'Game Over - Better luck tomorrow'); }catch(e){}
   try{ window.dispatchEvent(new CustomEvent('fihr:gameover',{detail:{outcome: win?'win':'loss'}})); }catch(e){}
   try{ if (window.recordGame) window.recordGame(win?'win':'loss', (win? currentRow+1 : MAX_ROWS), !!HINT_USED); }catch(e){}
-  try{ if (window.confetti) window.confetti({ particleCount: 140, spread: 75, origin: { y: 0.6 } }); }catch(e){}
+  try{ window.confetti && window.confetti({ particleCount: 150, spread: 72, origin: { y: 0.6 } }); }catch(e){}
 }
 
-function submit(){ if(currentCol<WORDLEN) return;
-  const tiles=currentTiles(); const guess=[...tiles].map(t=>t.textContent).join('');
+function submit(){
+  if(currentCol<WORDLEN) return;
+  const guess=currentGuess();
   if(!words.includes(guess)){ showToast('Not in list'); return; }
   const res=evaluate(guess); paintRow(currentRow,res);
   if(guess===solution){ endGame(true); return; }
-  currentRow++; currentCol=0; if(currentRow>=MAX_ROWS){ endGame(false); } }
+  currentRow++; currentCol=0; if(currentRow>=MAX_ROWS){ endGame(false); }
+}
 
-function showToast(msg){ let t=document.getElementById('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t);
-    t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='70px'; t.style.background='#111'; t.style.color='#fff'; t.style.padding='.6rem .9rem'; t.style.borderRadius='10px'; t.style.fontWeight='700'; t.style.boxShadow='0 6px 24px rgba(0,0,0,.25)'; }
-  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(()=>{t.style.opacity='0'}, 1800); }
+function onKey(k){
+  if(INPUT_LOCKED) return;
+  if(k==='⌫'){ pop(); return; }
+  if(k==='ENTER'){ submit(); return; }
+  if(/^[A-Z]$/.test(k)) push(k);
+}
 
-/* Hints: leave only TWO guesses */
-function setupHint(){
+function loadKeyboard(){
+  const rows=[
+    ['Q','W','E','R','T','Y','U','I','O','P'],
+    ['A','S','D','F','G','H','J','K','L'],
+    ['ENTER','Z','X','C','V','B','N','M','⌫']
+  ];
+  keyboard.innerHTML='';
+  rows.forEach(row=>{
+    const r=document.createElement('div'); r.className='krow';
+    row.forEach(k=>{ const b=document.createElement('button'); b.className='key'; if(k==='ENTER'||k==='⌫') b.classList.add('wide'); b.textContent=k; b.dataset.key=k; b.addEventListener('click', ()=>onKey(k)); r.appendChild(b); });
+    keyboard.appendChild(r);
+  });
+  window.addEventListener('keydown', e=>{
+    let k=e.key;
+    if (k==='Backspace') k='⌫'; else if (k==='Enter') k='ENTER'; else k=k.toUpperCase();
+    if (k==='ENTER' || k==='⌫' || /^[A-Z]$/.test(k)) onKey(k);
+  });
+}
+
+function showToast(msg){
+  let t=document.getElementById('toast'); if(!t){ t=document.createElement('div'); t.id='toast'; document.body.appendChild(t);
+    t.style.position='fixed'; t.style.left='50%'; t.style.transform='translateX(-50%)'; t.style.bottom='72px'; t.style.background='#111'; t.style.color='#fff'; t.style.padding='.6rem .9rem'; t.style.borderRadius='10px'; t.style.fontWeight='700'; t.style.boxShadow='0 6px 24px rgba(0,0,0,.25)'; t.style.zIndex='100'; }
+  t.textContent=msg; t.style.opacity='1'; clearTimeout(window.__t); window.__t=setTimeout(()=>{t.style.opacity='0'}, 1800);
+}
+
+/* Hints (leave 2 guesses) */
+(function setupHint(){
   const hb=$('#hintBtn'); const modal=$('#hintModal'); const cancel=$('#hintCancel'); const confirm=$('#hintConfirm');
   hb.addEventListener('click', ()=>{ if(HINT_USED) return; modal.classList.remove('hidden'); });
   const close=()=>modal.classList.add('hidden'); cancel.addEventListener('click', close);
   confirm.addEventListener('click', ()=>{ if(HINT_USED) return; HINT_USED=true; close();
-    const rows=$all('.row'); const keepStart=Math.max(0, rows.length-2);
-    for(let i=0;i<keepStart;i++){ rows[i].style.opacity='.35'; rows[i].style.pointerEvents='none'; }
+    const keepStart = MAX_ROWS - 2;
+    for(let r=0;r<keepStart;r++){ for(let c=0;c<WORDLEN;c++){ tileAt(r,c).classList.add('ghost'); } }
     currentRow=Math.max(currentRow, keepStart);
-    const h=hints[solution]||''; $('#hintText').textContent=h?('Hint: '+h):'Hint used'; hb.replaceWith($('#hintText')); showToast('Only 2 guesses left!'); }); 
-  window.addEventListener('keydown', e=>{ if(e.key==='Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden'); }); }
+    const h=hints[solution]||''; $('#hintText').textContent=h?('Hint: '+h):'Hint used'; hb.replaceWith($('#hintText')); showToast('Only 2 guesses left!');
+  });
+  window.addEventListener('keydown', e=>{ if(e.key==='Escape' && !modal.classList.contains('hidden')) modal.classList.add('hidden'); });
+})();
 
-/* Auto-resize tiles to keep board above the fold */
+/* Auto-size tiles to stay above fold (Pro only) */
 function autoSizeBoard(){
   try{
     const root = document.documentElement;
     const vh = window.innerHeight || root.clientHeight;
-    const game = document.querySelector('.game-container');
-    const gridEl = document.getElementById('grid');
+    const board = document.querySelector('.board');
     const kbd = document.getElementById('keyboard');
-    const hintText = document.getElementById('hintText');
     const banner = document.querySelector('.mode-banner');
     const controls = document.querySelector('.controls');
+    const hint = document.getElementById('hintText');
 
-    const bannerH = banner ? banner.getBoundingClientRect().height : 0;
-    const controlsH = controls ? controls.getBoundingClientRect().height : 0;
-    const hintH = hintText ? hintText.getBoundingClientRect().height : 0;
-    const kbdH = kbd ? kbd.getBoundingClientRect().height : 0;
-    const margins = 28; // safe padding
+    const bannerH = banner?banner.getBoundingClientRect().height:0;
+    const controlsH = controls?controls.getBoundingClientRect().height:0;
+    const hintH = hint?hint.getBoundingClientRect().height:0;
+    const kbdH = kbd?kbd.getBoundingClientRect().height:0;
+    const margins = 36;
 
-    const available = Math.max(120, vh - (bannerH + controlsH + hintH + kbdH + margins));
-    const gap = parseFloat(getComputedStyle(gridEl).gap || '4');
-    const byHeight = Math.floor((available - (MAX_ROWS-1)*gap) / MAX_ROWS);
-    const byWidth = Math.floor(((gridEl.clientWidth || game.clientWidth) - (WORDLEN-1)*gap) / WORDLEN);
+    const available = Math.max(140, vh - (bannerH+controlsH+hintH+kbdH+margins));
+    const gridGap = parseFloat(getComputedStyle(grid).gap || '4');
+    const byHeight = Math.floor((available - (MAX_ROWS-1)*gridGap) / MAX_ROWS);
+    const byWidth = Math.floor(((board.clientWidth||grid.clientWidth) - (WORDLEN-1)*gridGap) / WORDLEN);
     const size = Math.max(28, Math.min(byHeight, byWidth));
 
-    root.style.setProperty('--proTileSize', (size>0?size:56) + 'px');
+    root.style.setProperty('--proTileSize', (size>0?size:56)+'px');
   }catch(e){}
 }
 window.addEventListener('resize', autoSizeBoard);
-window.addEventListener('DOMContentLoaded', autoSizeBoard);
 window.addEventListener('orientationchange', autoSizeBoard);
+window.addEventListener('DOMContentLoaded', autoSizeBoard);
 
-/* Stats — Pro + Classic tabs in one modal */
+/* Stats modal with Classic/Pro tabs (same as 5.0.2) */
 (function statsTabbed(){
-  // Keys (try multiple classic namespaces for compatibility)
   const KEY_PRO='fihr_stats_v1_pro';
   const KEY_CLASSIC_CANDIDATES=['fihr_stats_v1','fihr_stats','fihr_stats_classic','fihr_stats_v0'];
   function load(key){ try{ return JSON.parse(localStorage.getItem(key))||null; }catch{ return null; } }
-  function loadClassic(){
-    for(const k of KEY_CLASSIC_CANDIDATES){ const s=load(k); if(s) return {data:s, key:k}; }
-    // Default empty
-    return {data:{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}, key:KEY_CLASSIC_CANDIDATES[0]};
-  }
+  function loadClassic(){ for(const k of KEY_CLASSIC_CANDIDATES){ const s=load(k); if(s) return {data:s, key:k}; } return {data:{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}, key:KEY_CLASSIC_CANDIDATES[0]}; }
   function loadPro(){ return load(KEY_PRO)||{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}; }
-  function save(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch{} }
-
-  // Build tabbed modal UI
   const modal=document.createElement('div'); modal.id='statsModal'; modal.className='modal hidden';
-  modal.innerHTML = `
-    <div class="modal-backdrop"></div>
+  modal.innerHTML=`<div class="modal-backdrop"></div>
     <div class="modal-box" role="document">
       <h2 id="statsTitle">Your Stats</h2>
       <div class="tabs" role="tablist" style="display:flex;gap:.4rem;justify-content:center;margin:.4rem 0 .6rem;">
@@ -210,90 +245,26 @@ window.addEventListener('orientationchange', autoSizeBoard);
       </div>
     </div>`;
   document.body.appendChild(modal);
-
-  function renderPanel(container, st){
-    container.innerHTML = `
-      <div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.2rem;">
-        ${card('Played', st.played||0)}
-        ${card('Wins', st.wins||0)}
-        ${card('Win Rate', rate(st.wins, st.played))}
-        ${card('Current Streak', st.cur||0)}
-        ${card('Max Streak', st.max||0)}
-        ${card('Avg Guesses', avg(st.totalGuesses, Math.max(st.wins||0,1)))}
-        ${card('Hints Used', st.hints||0)}
-      </div>`;
-  }
-  function card(label, val){
-    return \`<div class="stats-card" style="background:#f3f4f6;border-radius:10px;padding:.7rem .8rem;text-align:center;">
-      <div class="label" style="font-size:.78rem;color:#6b7280;">\${label}</div>
-      <div class="value" style="font-size:1.3rem;font-weight:800;margin-top:.25rem;">\${val}</div>
-    </div>\`;
-  }
+  function card(label,val){ return `<div class="stats-card" style="background:#f3f4f6;border-radius:10px;padding:.7rem .8rem;text-align:center;"><div class="label" style="font-size:.78rem;color:#6b7280;">${label}</div><div class="value" style="font-size:1.3rem;font-weight:800;margin-top:.25rem;">${val}</div></div>`; }
   function rate(w,p){ return p? (Math.round(100*w/p)+'%') : '0%'; }
   function avg(t,n){ return n? (t/n).toFixed(1) : '0.0'; }
-
-  const statsBtn=document.getElementById('statsBtn');
-  const closeBtn=()=> modal.classList.add('hidden');
-  statsBtn && statsBtn.addEventListener('click', ()=>{
-    const cl=loadClassic(); const pr=loadPro();
-    renderPanel(document.getElementById('statsClassic'), cl.data);
-    renderPanel(document.getElementById('statsPro'), pr);
-    modal.classList.remove('hidden');
-    document.getElementById('tabClassic').focus();
-  });
+  function renderPanel(container, st){ container.innerHTML=`<div class="stats-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.2rem;">${card('Played',st.played||0)}${card('Wins',st.wins||0)}${card('Win Rate',rate(st.wins,st.played))}${card('Current Streak',st.cur||0)}${card('Max Streak',st.max||0)}${card('Avg Guesses',avg(st.totalGuesses,Math.max(st.wins||0,1)))}${card('Hints Used',st.hints||0)}</div>`; }
+  const statsBtn=document.getElementById('statsBtn'); const closeBtn=()=>modal.classList.add('hidden');
+  statsBtn && statsBtn.addEventListener('click', ()=>{ const cl=loadClassic(); const pr=loadPro(); renderPanel(document.getElementById('statsClassic'), cl.data); renderPanel(document.getElementById('statsPro'), pr); modal.classList.remove('hidden'); document.getElementById('tabClassic').focus(); });
   modal.querySelector('.modal-backdrop').addEventListener('click', closeBtn);
   modal.querySelector('#statsClose').addEventListener('click', closeBtn);
-
-  // Tabs behavior
   const tabC=document.getElementById('tabClassic'), tabP=document.getElementById('tabPro');
   tabC.addEventListener('click', ()=>{ tabC.setAttribute('aria-selected','true'); tabP.setAttribute('aria-selected','false'); document.getElementById('statsClassic').style.display='block'; document.getElementById('statsPro').style.display='none'; });
   tabP.addEventListener('click', ()=>{ tabP.setAttribute('aria-selected','true'); tabC.setAttribute('aria-selected','false'); document.getElementById('statsClassic').style.display='none'; document.getElementById('statsPro').style.display='block'; });
-
-  // Reset current tab's stats
-  modal.querySelector('#statsReset').addEventListener('click', ()=>{
-    if (tabC.getAttribute('aria-selected')==='true'){
-      const cl=loadClassic(); localStorage.removeItem(cl.key);
-      renderPanel(document.getElementById('statsClassic'), loadClassic().data);
-    } else {
-      localStorage.removeItem(KEY_PRO);
-      renderPanel(document.getElementById('statsPro'), loadPro());
-    }
-  });
-
-  window.recordGame = function(outcome, guesses, usedHint){
-    // Maintain Pro stats
-    const sol=(solution||'').toUpperCase();
-    const KEY=KEY_PRO;
-    function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}; }catch{ return {played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}; }}
-    function save(x){ try{ localStorage.setItem(KEY, JSON.stringify(x)); }catch{} }
-    const st=load(); if (st.lastSolution===sol && sol) return;
-    st.played+=1; if(outcome==='win'){ st.wins+=1; st.cur+=1; if(st.cur>st.max) st.max=st.cur; } else { st.cur=0; }
-    if (usedHint) st.hints+=1; if (guesses && Number.isFinite(guesses)) st.totalGuesses+=Math.max(1,guesses);
-    st.lastSolution=sol; save(st);
-  };
+  modal.querySelector('#statsReset').addEventListener('click', ()=>{ if(tabC.getAttribute('aria-selected')==='true'){ const cl=loadClassic(); localStorage.removeItem(cl.key); renderPanel(document.getElementById('statsClassic'), loadClassic().data); } else { localStorage.removeItem('fihr_stats_v1_pro'); renderPanel(document.getElementById('statsPro'), loadPro()); } });
 })();
 
-/* Confetti cleanup (as before) */
-(function confettiCleanup(){
-  function clean(){ setTimeout(()=>{
-    try{
-      const vw=Math.max(document.documentElement.clientWidth, window.innerWidth||0);
-      const vh=Math.max(document.documentElement.clientHeight, window.innerHeight||0);
-      document.querySelectorAll('canvas, .confetti, .Confetti, [data-confetti]').forEach(el=>{
-        const r=el.getBoundingClientRect(); const full=(r.width>=vw*0.9 && r.height>=vh*0.9);
-        if (el.tagName==='CANVAS' || /confetti/i.test(el.className) || el.getAttribute('data-confetti')!==null || full){
-          el.style.pointerEvents='none'; el.style.background='transparent'; el.style.opacity='0';
-          try{ el.parentElement && el.parentElement.removeChild(el); }catch{}
-        }
-      });
-    }catch(e){}
-  }, 1200); }
-  window.addEventListener('fihr:gameover', clean);
-})();
+// Wire buttons
+document.getElementById('statsBtn').addEventListener('click', ()=>{});
+document.getElementById('aboutBtn').addEventListener('click', ()=>{ alert('FIHR Foodle Pro — have fun & eat well!'); });
 
-// Kick things off
+// Init
 loadWords();
-setupHint();
 </script>
 </body>
 </html>
