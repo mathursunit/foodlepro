@@ -308,3 +308,8 @@ canvas{ background-color: transparent !important; pointer-events:none !important
 /* v5.0.2 — Tile sizing via CSS variable set by JS to keep board above the fold */
 :root{ --tileSize: auto; }
 .tile{ width: var(--tileSize); height: var(--tileSize); } /* overrides aspect ratio when set */
+
+
+/* v5.0.3 — Scope tile autosize to Pro only */
+.classic .tile{ width: initial !important; height: initial !important; }
+.pro .tile{ width: var(--proTileSize) !important; height: var(--proTileSize) !important; }
