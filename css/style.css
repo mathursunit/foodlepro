@@ -288,4 +288,4 @@ canvas{ background-color: transparent !important; pointer-events:none !important
 
 /* v5.0.3 — Scope tile autosize to Pro only */
 .classic .tile{ width: initial !important; height: initial !important; }
-.pro .tile{ width: var(--proTileSize) !important; height: var(--proTileSize) !important; }
+.pro .tile{ width: var(--proTileSize,56px) !important; height: var(--proTileSize,56px) !important; min-width:28px; min-height:28px; }
