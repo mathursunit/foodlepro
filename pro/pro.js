@@ -1,5 +1,5 @@
 
-/* Foodle Pro v6.0.0 — 6×6 grid, modern tabs, real-word CSV, consent hint (2 tries remain) */
+/* Foodle Pro v6.0.1 — 6×6 grid, modern tabs, real-word CSV, consent hint (2 tries remain) */
 (function(){
 'use strict';
 const WORDLEN=6, MAX_ROWS=6;

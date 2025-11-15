@@ -114,7 +114,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-<script src="script.js?v=v6.0.0"></script>
+<script src="script.js?v=v6.0.1"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -123,18 +123,18 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-  <script src="hint-addon.js?v=v6.0.0"></script>
-  <script src="ui-addon.js?v=v6.0.0"></script>
-  <script src="stats-addon.js?v=v6.0.0"></script>
-  <script src="social-addon.js?v=v6.0.0"></script>
-  <script src="menu-addon.js?v=v6.0.0"></script>
-  <script src="cleanup-addon.js?v=v6.0.0"></script>
-  <script src="confetti-fix.js?v=v6.0.0"></script>
+  <script src="hint-addon.js?v=v6.0.1"></script>
+  <script src="ui-addon.js?v=v6.0.1"></script>
+  <script src="stats-addon.js?v=v6.0.1"></script>
+  <script src="social-addon.js?v=v6.0.1"></script>
+  <script src="menu-addon.js?v=v6.0.1"></script>
+  <script src="cleanup-addon.js?v=v6.0.1"></script>
+  <script src="confetti-fix.js?v=v6.0.1"></script>
 
 <script>
 (function(){
   try{
-    const W='Build v6.0.0';
+    const W='Build v6.0.1';
     let m=document.querySelector('.watermark');
     if(!m){ m=document.createElement('div'); m.className='watermark'; m.style.position='fixed'; m.style.right='10px'; m.style.bottom='8px'; m.style.color='#94a3b8'; m.style.fontWeight='800'; document.body.appendChild(m); }
     m.textContent=W;
@@ -151,6 +151,27 @@ if ('serviceWorker' in navigator) {
     if(tabs.length && ind){
       const active=tabs[0]; // Classic active on this page
       const set=()=>{ ind.style.position='absolute'; ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; };
+      setTimeout(set,0); window.addEventListener('resize', set);
+    }
+  }catch(e){}
+})();
+</script>
+
+
+<script>
+(function(){
+  try{
+    const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
+    const W='Build v6.0.1';
+    const all=document.querySelectorAll('.watermark');
+    if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
+    let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; m.style.position='fixed'; m.style.right='10px'; m.style.bottom='8px'; m.style.color='#94a3b8'; m.style.fontWeight='800'; document.body.appendChild(m); }
+    m.textContent=W;
+    const nav=document.querySelector('.mode-tabs');
+    const ind=document.querySelector('.mode-tabs .tab-indicator');
+    const active=document.querySelector('.mode-tabs .tab.active');
+    if(nav && ind && active){
+      const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; };
       setTimeout(set,0); window.addEventListener('resize', set);
     }
   }catch(e){}

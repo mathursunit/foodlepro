@@ -4,15 +4,21 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>FIHR Foodle — Pro</title>
-  <link rel="stylesheet" href="../style.css?v=v6.0.0"/>
+  <link rel="stylesheet" href="../style.css?v=v6.0.1"/>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 </head>
 <body class="pro">
-  <nav class="mode-tabs" role="tablist" aria-label="Game modes">
-    <a class="tab" href="../index.html" role="tab" aria-selected="false">Classic</a>
-    <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>
-    <span class="tab-indicator" aria-hidden="true"></span>
-  </nav>
+  
+<!-- v6.0.1 tab styles -->
+<style>
+.mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
+.mode-tabs .tab{position:relative;display:inline-flex;align-items:center;justify-content:center;font-weight:800;padding:.8rem 1.2rem;color:#cbd5e1;text-decoration:none}
+.mode-tabs .tab:hover{color:#fff}
+.mode-tabs .tab.active{color:#fff}
+.mode-tabs .tab-indicator{position:absolute;bottom:0;height:3px;width:90px;background:#a78bfa;border-radius:2px;transition:left .25s ease}
+@media (min-width:520px){ .mode-tabs .tab-indicator{width:120px} }
+</style>
+<nav class="mode-tabs" role="tablist" aria-label="Game modes">  <a class="tab" href="../" role="tab" aria-selected="false">Classic</a>  <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>  <span class="tab-indicator" aria-hidden="true"></span></nav>
 
   <div class="container">
     <div class="next"><span id="countdown">Next word in …</span></div>
@@ -41,7 +47,7 @@
     <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
   </div>
 
-  <div class="watermark">Build v6.0.0</div>
+  <div class="watermark">Build v6.0.1</div>
 
   <!-- Hint modal -->
   <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
@@ -79,6 +85,27 @@
     </div>
   </div>
 
-  <script src="pro.js?v=v6.0.0"></script>
+  <script src="pro.js?v=v6.0.1"></script>
+
+<script>
+(function(){
+  try{
+    const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
+    const W='Build v6.0.1';
+    const all=document.querySelectorAll('.watermark');
+    if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
+    let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; m.style.position='fixed'; m.style.right='10px'; m.style.bottom='8px'; m.style.color='#94a3b8'; m.style.fontWeight='800'; document.body.appendChild(m); }
+    m.textContent=W;
+    const nav=document.querySelector('.mode-tabs');
+    const ind=document.querySelector('.mode-tabs .tab-indicator');
+    const active=document.querySelector('.mode-tabs .tab.active');
+    if(nav && ind && active){
+      const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; };
+      setTimeout(set,0); window.addEventListener('resize', set);
+    }
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
