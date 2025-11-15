@@ -1,108 +1,119 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>FIHR Foodle — Pro</title>
-  <link rel="stylesheet" href="../style.css?v=v6.0.1"/>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
-</head>
-<body class="pro">
-  
-<!-- v6.0.1 tab styles -->
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FIHR Foodle — Pro</title>
+<link rel="stylesheet" href="../style.css?v=v6.0.3"/>
+
+<!-- v6.0.3 safety styles -->
 <style>
+:root{--tileSize:56px}
 .mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
 .mode-tabs .tab{position:relative;display:inline-flex;align-items:center;justify-content:center;font-weight:800;padding:.8rem 1.2rem;color:#cbd5e1;text-decoration:none}
-.mode-tabs .tab:hover{color:#fff}
-.mode-tabs .tab.active{color:#fff}
-.mode-tabs .tab-indicator{position:absolute;bottom:0;height:3px;width:90px;background:#a78bfa;border-radius:2px;transition:left .25s ease}
-@media (min-width:520px){ .mode-tabs .tab-indicator{width:120px} }
+.mode-tabs .tab:hover,.mode-tabs .tab.active{color:#fff}
+.mode-tabs .tab-indicator{position:absolute;bottom:0;height:3px;width:110px;background:#a78bfa;border-radius:2px;transition:left .25s ease}
+.container{max-width:900px;margin:0 auto;padding:10px}
+.header{display:flex;gap:10px;justify-content:center;align-items:center;margin-bottom:10px}
+.next{display:flex;justify-content:center;color:#475569;font-weight:800;margin:4px 0}
+.board{display:flex;justify-content:center;margin:8px 0}
+.grid{display:grid;gap:6px;grid-template-columns:repeat(6,var(--tileSize));}
+.tile{width:var(--tileSize);height:var(--tileSize);border-radius:10px;border:2px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;color:#111}
+.tile.correct{background:#a78bfa;color:#fff;border-color:#a78bfa}
+.tile.present{background:#22d3ee;color:#0b1322;border-color:#22d3ee}
+.tile.absent{background:#475569;color:#fff;border-color:#475569}
+.tile.ghost{background:repeating-linear-gradient(135deg,#f1f5f9,#f1f5f9 6px,#e2e8f0 6px,#e2e8f0 12px);opacity:.7}
+.legend{display:flex;gap:14px;justify-content:center;align-items:center;margin-top:6px}
+.legend .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px}
+.controls{display:flex;gap:12px;justify-content:center;margin:8px 0}
+.icon-btn{font-size:22px;line-height:1;padding:.5rem .65rem;border-radius:12px;background:#f1f5f9;border:1px solid #cbd5e1}
+.kbd{display:block;margin:14px auto;max-width:840px}
+.krow{display:flex;gap:8px;justify-content:center;margin:6px auto}
+.key{display:flex;align-items:center;justify-content:center;padding:.6rem .7rem;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:10px;min-width:38px;font-weight:800}
+.key.wide{min-width:72px}
+.modal{position:fixed;inset:0;display:none}
+.modal.open{display:block}
+.modal .bg{position:absolute;inset:0;background:rgba(2,6,23,.52)}
+.modal .panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;color:#0b1322;padding:16px 18px;border-radius:16px;min-width:260px;box-shadow:0 12px 40px rgba(0,0,0,.35);text-align:center}
+.modal .actions{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.btn{background:#eef2ff;border:1px solid #c7d2fe;border-radius:12px;padding:.6rem .9rem;font-weight:800}
+.watermark{position:fixed;right:10px;bottom:8px;color:#94a3b8;font-weight:800}
 </style>
-<nav class="mode-tabs" role="tablist" aria-label="Game modes">  <a class="tab" href="../" role="tab" aria-selected="false">Classic</a>  <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>  <span class="tab-indicator" aria-hidden="true"></span></nav>
 
-  <div class="container">
-    <div class="next"><span id="countdown">Next word in …</span></div>
-    <div class="header">
-      <div class="logo">FIHR</div>
-      <div class="logo">Foodle Pro</div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
+</head>
+<body class="pro">
+<nav class="mode-tabs" role="tablist" aria-label="Game modes">
+  <a class="tab" href="../" role="tab" aria-selected="false">Classic</a>
+  <a class="tab active" href="#" role="tab" aria-selected="true">Pro</a>
+  <span class="tab-indicator" aria-hidden="true"></span>
+</nav>
 
-    <div id="spinner" class="next" style="display:none">Loading word list…</div>
-    <div class="board"><div class="grid" id="grid"></div></div>
-
-    <div class="controls">
-      <button id="hintBtn" class="btn icon-btn" title="Hint" aria-label="Hint">💡</button>
-      <button id="statsBtn" class="btn icon-btn" title="Stats" aria-label="Stats">📊</button>
-      <button id="aboutBtn" class="btn icon-btn" title="About" aria-label="About">ℹ️</button>
-    </div>
-
-    <div class="legend">
-      <span><span class="dot" style="background:#a78bfa"></span>Correct</span>
-      <span><span class="dot" style="background:#22d3ee"></span>Present</span>
-      <span><span class="dot" style="background:#475569"></span>Absent</span>
-    </div>
-
-    <div id="hintText" class="next" style="min-height:24px;"></div>
-
-    <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
+<div class="container">
+  <div class="next"><span id="countdown">Next word in …</span></div>
+  <div class="header"><div class="logo">FIHR</div><div class="logo">Foodle Pro</div></div>
+  <div id="spinner" class="next" style="display:none">Loading word list…</div>
+  <div class="board"><div class="grid" id="grid"></div></div>
+  <div class="controls">
+    <button id="hintBtn" class="btn icon-btn" title="Hint" aria-label="Hint">💡</button>
+    <button id="statsBtn" class="btn icon-btn" title="Stats" aria-label="Stats">📊</button>
+    <button id="aboutBtn" class="btn icon-btn" title="About" aria-label="About">ℹ️</button>
   </div>
+  <div class="legend">
+    <span><span class="dot" style="background:#a78bfa"></span>Correct</span>
+    <span><span class="dot" style="background:#22d3ee"></span>Present</span>
+    <span><span class="dot" style="background:#475569"></span>Absent</span>
+  </div>
+  <div id="hintText" class="next" style="min-height:24px;"></div>
+  <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
+</div>
 
-  <div class="watermark">Build v6.0.1</div>
+<div class="watermark">Build v6.0.3</div>
 
-  <!-- Hint modal -->
-  <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
-    <div class="bg" data-close="1"></div>
-    <div class="panel">
-      <h2 id="hintTitle">Use a hint?</h2>
-      <p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
-      <div class="actions">
-        <button class="btn" id="hintCancel">Cancel</button>
-        <button class="btn" id="hintConfirm">Use Hint</button>
-      </div>
+<div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
+  <div class="bg" data-close="1"></div>
+  <div class="panel">
+    <h2 id="hintTitle">Use a hint?</h2>
+    <p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
+    <div class="actions">
+      <button class="btn" id="hintCancel">Cancel</button>
+      <button class="btn" id="hintConfirm">Use Hint</button>
     </div>
   </div>
+</div>
 
-  <!-- About modal -->
-  <div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
-    <div class="bg" data-close="1"></div>
-    <div class="panel">
-      <h2 id="aboutTitle">About Foodle Pro</h2>
-      <p>Hungry for 6‑letter glory? 🥇</p>
-      <div class="actions"><button class="btn" data-close="1">Close</button></div>
+<div class="modal" id="aboutModal" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <div class="bg" data-close="1"></div>
+  <div class="panel">
+    <h2 id="aboutTitle">About Foodle Pro</h2>
+    <p>Hungry for 6‑letter glory? 🥇</p>
+    <div class="actions"><button class="btn" data-close="1">Close</button></div>
+  </div>
+</div>
+
+<div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
+  <div class="bg" data-close="1"></div>
+  <div class="panel">
+    <h2 id="statsTitle">Your Pro Stats</h2>
+    <div id="statsBody" style="margin:.5rem 0"></div>
+    <div class="actions">
+      <button class="btn" id="resetStats">Reset</button>
+      <button class="btn" data-close="1">Close</button>
     </div>
   </div>
+</div>
 
-  <!-- Stats modal (simple Pro-only for now) -->
-  <div class="modal" id="statsModal" role="dialog" aria-modal="true" aria-labelledby="statsTitle">
-    <div class="bg" data-close="1"></div>
-    <div class="panel">
-      <h2 id="statsTitle">Your Pro Stats</h2>
-      <div id="statsBody" style="margin:.5rem 0"></div>
-      <div class="actions">
-        <button class="btn" id="resetStats">Reset</button>
-        <button class="btn" data-close="1">Close</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="pro.js?v=v6.0.1"></script>
+<script src="pro.js?v=v6.0.3"></script>
 
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.1';
-    const all=document.querySelectorAll('.watermark');
-    if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
-    let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; m.style.position='fixed'; m.style.right='10px'; m.style.bottom='8px'; m.style.color='#94a3b8'; m.style.fontWeight='800'; document.body.appendChild(m); }
-    m.textContent=W;
-    const nav=document.querySelector('.mode-tabs');
-    const ind=document.querySelector('.mode-tabs .tab-indicator');
-    const active=document.querySelector('.mode-tabs .tab.active');
-    if(nav && ind && active){
-      const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px'; };
-      setTimeout(set,0); window.addEventListener('resize', set);
-    }
+    const W='Build v6.0.3';const all=document.querySelectorAll('.watermark');
+    if(all.length>1){for(let i=1;i<all.length;i++) all[i].remove();}
+    let m=all[0]; if(!m){m=document.createElement('div');m.className='watermark';document.body.appendChild(m);} m.textContent=W;
+    const nav=document.querySelector('.mode-tabs'), ind=document.querySelector('.mode-tabs .tab-indicator'), active=document.querySelector('.mode-tabs .tab.active');
+    if(nav && ind && active){ const set=()=>{ ind.style.left=(active.offsetLeft + (active.offsetWidth - ind.offsetWidth)/2)+'px';}; setTimeout(set,0); addEventListener('resize', set); }
   }catch(e){}
 })();
 </script>

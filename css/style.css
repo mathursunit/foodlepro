@@ -265,12 +265,3 @@ canvas{ background-color: transparent !important; pointer-events:none !important
 /* v4.1.2 — No dimming after game over */
 #grid.disabled-grid{ pointer-events:none; opacity:1 !important; filter:none !important; }
 #keyboard.disabled{ opacity:1 !important; filter:none !important; }
-
-
-/* v6.0.0 modern mode tabs */
-.mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.6);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
-.mode-tabs .tab{position:relative;display:inline-flex;align-items:center;justify-content:center;font-weight:800;padding:.8rem 1.2rem;color:#cbd5e1;text-decoration:none}
-.mode-tabs .tab:hover{color:#fff}
-.mode-tabs .tab.active{color:#fff}
-.mode-tabs .tab-indicator{position:absolute;bottom:0;transform:translateY(0);height:3px;width:120px;background:#a78bfa;border-radius:2px;transition:left .25s ease}
-@media (max-width:520px){ .mode-tabs .tab{padding:.7rem 1rem} .mode-tabs .tab-indicator{width:90px} }
