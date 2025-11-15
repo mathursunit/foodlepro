@@ -26,7 +26,7 @@ function loadKeyboard(){const rows=[['Q','W','E','R','T','Y','U','I','O','P'],['
 function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
 addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
 
-async function loadWords(){try{spinner.style.display='block';const txt=await fetch(CSV_PATH,{cache:'no-store'}).then(r=>r.text());const lines=txt.split('\n');for(let i=1;i<lines.length;i++){const line=(lines[i]||'').trim();if(!line) continue;const pos=line.indexOf(',');if(pos<0) continue;let w=line.slice(0,pos).toUpperCase();let clean='';for(let j=0;j<w.length;j++){const ch=w[j],L=ch.toLowerCase();if(L>='a'&&L<='z') clean+=ch;}const h=line.slice(pos+1).trim();if(clean.length===WORDLEN){words.push(clean);hints[clean]=h;}}}catch(e){}if(!words.length){words=['PANEER','SPICES','GINGER','TOMATO','ORANGE','BUTTER','CHEESE','MASALA','PICKLE','PAPAYA'];hints={'PANEER':'Indian cottage cheese','SPICES':'Masala magic','GINGER':'Zesty root','TOMATO':'Salad + sauce staple','ORANGE':'Citrus fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','MASALA':'Spice blend','PICKLE':'Tangy preserved veg','PAPAYA':'Tropical fruit'};}const idx=dailyIndex(words.length);solution=words[idx]||words[0];renderGrid();loadKeyboard();autoSize();setTimeout(autoSize,0);}
+async function loadWords(){try{spinner.style.display='block';const txt=await fetch(CSV_PATH,{cache:'no-store'}).then(r=>r.text());const lines=txt.split('\n');for(let i=1;i<lines.length;i++){const line=(lines[i]||'').trim();if(!line) continue;const pos=line.indexOf(',');if(pos<0) continue;let w=line.slice(0,pos).toUpperCase();let clean='';for(let j=0;j<w.length;j++){const ch=w[j],L=ch.toLowerCase();if(L>='a'&&L<='z') clean+=ch;}const h=line.slice(pos+1).trim();if(clean.length===WORDLEN){words.push(clean);hints[clean]=h;}}}catch(e){}if(!words.length){words=['PANEER','SPICES','GINGER','TOMATO','ORANGE','BUTTER','CHEESE','MASALA','PICKLE','PAPAYA'];hints={'PANEER':'Indian cottage cheese','SPICES':'Masala magic','GINGER':'Zesty root','TOMATO':'Salad + sauce staple','ORANGE':'Citrus fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','MASALA':'Spice blend','PICKLE':'Tangy preserved veg','PAPAYA':'Tropical fruit'};}const idx=dailyIndex(words.length);solution=words[idx]||words[0];setTimeout(autoSize,0);}
 function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
 function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
 function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
@@ -60,7 +60,7 @@ if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
 function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
 addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
 
-renderGrid();loadKeyboard();autoSize();(async()=>{await loadWords();spinner.style.display='none';})();
+
 })();
 
 try { if (window.__foodleProKeyHandler) { window.removeEventListener('keydown', window.__foodleProKeyHandler); } } catch(e){}
@@ -104,3 +104,19 @@ window.
   };
   window.addEventListener('keydown', window.__foodleProKeyHandler, {capture:true});
 })();
+
+
+// v6.0.8 robust startup: render UI immediately, then fetch words.
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    renderGrid();
+    loadKeyboard();
+    autoSize();
+    setTimeout(autoSize,0);
+  }catch(e){}
+  (async()=>{
+    try{ await loadWords(); }
+    catch(e){ console.warn('CSV load failed:', e); }
+    finally{ try{ spinner.style.display='none'; }catch(_){} }
+  })();
+});
