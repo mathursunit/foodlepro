@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>FIHR Foodle — Pro</title>
-<link rel="stylesheet" href="../style.css?v=v6.0.4"/>
+<link rel="stylesheet" href="../style.css?v=v6.0.7"/>
 <!-- v6.0.4 safety styles -->
 <style>
 :root{--tileSize:56px}
@@ -56,7 +56,7 @@ body.pro {
   border-radius: 20px;
 }
 .pro .header { padding: 10px 16px; margin: 14px auto; width: min(900px, 92vw); display: flex; justify-content: center; }
-.pro .header .brand { width: min(560px, 78vw); height: auto; display:block; filter: drop-shadow(0 8px 20px rgba(0,0,0,.35)); }
+.pro .header .brand { width: min(560px, 80vw); height: auto; display:block; filter: drop-shadow(0 8px 20px rgba(0,0,0,.35)); }
 .pro .board { padding: 16px 18px; }
 .pro .grid .tile { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.25); color: #fff; }
 .pro .tile.correct { background: rgba(167,139,250,0.9); border-color: rgba(167,139,250,0.9); }
@@ -95,7 +95,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.6</div>
+<div class="watermark">Build v6.0.7</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -109,12 +109,12 @@ body.pro {
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="statsTitle">Your Pro Stats</h2><div id="statsBody" style="margin:.5rem 0"></div>
     <div class="actions"><button class="btn" id="resetStats">Reset</button><button class="btn" data-close="1">Close</button></div></div></div>
-<script src="pro.js?v=v6.0.4"></script>
+<script src="pro.js?v=v6.0.7"></script>
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.6'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.7'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;
