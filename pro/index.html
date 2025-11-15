@@ -56,7 +56,7 @@ body.pro {
   border-radius: 20px;
 }
 .pro .header { padding: 10px 16px; margin: 14px auto; width: min(900px, 92vw); display: flex; justify-content: center; }
-.pro .header .brand { width: min(680px, 80vw); height: auto; display:block; filter: drop-shadow(0 8px 20px rgba(0,0,0,.35)); }
+.pro .header .brand { width: min(560px, 78vw); height: auto; display:block; filter: drop-shadow(0 8px 20px rgba(0,0,0,.35)); }
 .pro .board { padding: 16px 18px; }
 .pro .grid .tile { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.25); color: #fff; }
 .pro .tile.correct { background: rgba(167,139,250,0.9); border-color: rgba(167,139,250,0.9); }
@@ -83,7 +83,7 @@ body.pro {
 </nav>
 <div class="container">
   <div class="next"><span id="countdown">Next word in …</span></div>
-  <div class="header glass"><img class="brand" src="../assets/fihr-foodle-title.png?v=v2.7" alt="FIHR Foodle"/></div><div class="logo">Foodle Pro</div></div>
+  <div class="header glass"><img class="brand" src="../assets/fihr-foodle-title-transparent.png?v=v2.7" alt="FIHR Foodle"/></div><div class="logo">Foodle Pro</div></div>
   <div id="spinner" class="next" style="display:none">Loading word list…</div>
   <div class="board"><div class="grid" id="grid"></div></div>
   <div class="controls">
@@ -95,7 +95,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.5</div>
+<div class="watermark">Build v6.0.6</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -114,7 +114,7 @@ body.pro {
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.5'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.6'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;

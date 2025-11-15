@@ -62,3 +62,13 @@ addEventListener('resize',autoSize);addEventListener('orientationchange',autoSiz
 
 renderGrid();loadKeyboard();autoSize();(async()=>{await loadWords();spinner.style.display='none';})();
 })();
+
+try { if (window.__foodleProKeyHandler) { window.removeEventListener('keydown', window.__foodleProKeyHandler); } } catch(e){}
+window.__foodleProKeyHandler = function(e){
+  let k=e.key;
+  if(k==='Backspace') k='⌫';
+  else if(k==='Enter') k='ENTER';
+  else k=(k||'').toUpperCase();
+  if(k==='ENTER'||k==='⌫'||(k.length===1 && k>='A' && k<='Z')) onKey(k);
+};
+window.addEventListener('keydown', window.__foodleProKeyHandler, {capture:false});
