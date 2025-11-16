@@ -234,3 +234,46 @@
   addEventListener('orientationchange', autoSize);
   setTimeout(autoSize, 0);
 })();
+
+
+// ---- Countdown to next puzzle (8 AM IST logic kept simple to midnight UTC like Classic) ----
+(function(){
+  const el = document.getElementById('countdown');
+  if(!el) return;
+  function updateCountdown(){
+    const now = new Date();
+    const nextMidnightUTC = new Date(Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1
+    ));
+    const diff = nextMidnightUTC - now;
+    const hours = String(Math.floor(diff/3600000)).padStart(2,'0');
+    const minutes = String(Math.floor((diff%3600000)/60000)).padStart(2,'0');
+    const seconds = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+    el.innerText = `Next word in ${hours}:${minutes}:${seconds}`;
+  }
+  updateCountdown();
+  setInterval(updateCountdown,1000);
+})();
+
+// ---- Minimal confetti (falls from top) ----
+function dropConfetti(durationMs=1500, count=60){
+  const root = document.createElement('div');
+  root.setAttribute('data-confetti','1');
+  root.style.cssText = 'position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9999';
+  document.body.appendChild(root);
+  const colors = ['#a78bfa','#60a5fa','#34d399','#fbbf24','#f87171'];
+  const vw = Math.max(document.documentElement.clientWidth, window.innerWidth||0);
+  for (let i=0;i<count;i++){
+    const s = document.createElement('div');
+    const size = 6 + Math.random()*8;
+    s.style.cssText = `position:absolute;top:-20px;width:${size}px;height:${size}px;border-radius:2px;background:${colors[i%colors.length]};opacity:.9;left:${Math.random()*vw}px;`;
+    root.appendChild(s);
+    const fall = s.animate([
+      { transform:`translateY(-20px) rotate(0deg)`, opacity: .9 },
+      { transform:`translateY(${window.innerHeight+40}px) rotate(${360+Math.random()*360}deg)`, opacity: .9 }
+    ], { duration: durationMs + Math.random()*800, easing:'cubic-bezier(.17,.67,.32,1.01)' });
+  }
+  setTimeout(()=>root.remove(), durationMs+1200);
+}
