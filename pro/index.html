@@ -82,20 +82,66 @@ body.pro {
 </style>
 
 
+
 <style id="pro-hardening">
-:root{ --tileSize:56px; --tileGap:10px; --correct:#8b5cf6; --present:#22c1c3; --absent:#3b404b; }
-#grid.grid{ display:grid; grid-template-columns:repeat(6,var(--tileSize)); grid-auto-rows:var(--tileSize); gap:var(--tileGap); justify-content:center; margin:12px auto; }
-#grid .tile{ width:var(--tileSize); height:var(--tileSize); border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:calc(var(--tileSize)*.5); color:#e8ecf1; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); text-transform:uppercase; }
-#grid .tile.correct{ background:var(--correct); }
-#grid .tile.present{ background:var(--present); }
-#grid .tile.absent{ background:var(--absent); }
-#keyboard{ max-width:740px; margin:18px auto 28px; }
-#keyboard .kbrow{ display:flex; gap:8px; justify-content:center; margin:6px 0; }
-#keyboard .key{ padding:14px 12px; min-width:40px; border-radius:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#e8ecf1; font-weight:600; }
-#keyboard .key.correct{ background:var(--correct); }
-#keyboard .key.present{ background:var(--present); }
-#keyboard .key.absent{ background:var(--absent); }
+:root{
+  --tileSize:56px;
+  --tileGap:10px;
+  --kbScale:1;
+  /* Classic palette */
+  --correct:#8b5cf6; /* purple */
+  --present:#22c1c3; /* teal */
+  --absent:#3b404b;  /* dark grey */
+}
+#grid.grid{
+  display:grid;
+  grid-template-columns:repeat(6,var(--tileSize));
+  grid-auto-rows:var(--tileSize);
+  gap:var(--tileGap);
+  justify-content:center;
+  margin:12px auto;
+  padding:0 12px;
+  max-width:100vw;
+  box-sizing:border-box;
+}
+#grid .tile{
+  width:var(--tileSize);
+  height:var(--tileSize);
+  border-radius:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;
+  font-size:calc(var(--tileSize)*.48);
+  color:#e8ecf1;
+  text-transform:uppercase;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+#grid .tile.correct{ background:var(--correct); border-color:transparent;}
+#grid .tile.present{ background:var(--present); border-color:transparent;}
+#grid .tile.absent{  background:var(--absent); border-color:transparent;}
+#keyboard{ 
+  max-width:740px;
+  margin:16px auto 28px;
+  transform:scale(var(--kbScale));
+  transform-origin: top center;
+}
+#keyboard .kbrow{ display:flex; gap:8px; justify-content:center; margin:8px 0; }
+#keyboard .key{
+  padding:14px 12px; min-width:40px; border-radius:10px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  color:#e8ecf1; font-weight:600;
+}
+#keyboard .key.correct{ background:var(--correct); border-color:transparent;}
+#keyboard .key.present{ background:var(--present); border-color:transparent;}
+#keyboard .key.absent{  background:var(--absent);  border-color:transparent;}
+@media (max-width:420px){
+  :root{ --tileGap:8px; }
+  #keyboard .key{ padding:12px 10px; }
+}
 </style>
+
 
 </head><body class="pro">
 <nav class="mode-tabs" role="tablist" aria-label="Game modes">
