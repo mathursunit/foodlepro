@@ -1,122 +1,230 @@
 
-/* Foodle Pro v6.0.11 */
+/* Foodle Pro rebuilt v6.0.12b (clean, readable) */
 (function(){
-'use strict';
-const WORDLEN=6, MAX_ROWS=6;
-const grid=document.getElementById('grid');
-const keyboard=document.getElementById('keyboard');
-const spinner=document.getElementById('spinner');
-const hintBtn=document.getElementById('hintBtn');
-const statsBtn=document.getElementById('statsBtn');
-const aboutBtn=document.getElementById('aboutBtn');
-const hintText=document.getElementById('hintText');
-let words=[], hints={}, solution='', row=0, col=0, LOCK=false, HINT_USED=false;
-const CSV_PATH='../assets/fihr_food_words_pro_v1.csv';
+  'use strict';
 
-(function(){const ind=document.querySelector('.mode-tabs .tab-indicator');const active=document.querySelector('.mode-tabs .tab.active');if(ind&&active){const set=()=>{ind.style.left=(active.offsetLeft + (active.offsetWidth-ind.offsetWidth)/2)+'px';};setTimeout(set,0);addEventListener('resize', set);}})();
-(function(){const el=document.getElementById('countdown');if(!el)return;function until(){const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;const ist=new Date(utc+330*60000);ist.setHours(8,0,0,0);if(ist.getTime()<=utc+330*60000)ist.setDate(ist.getDate()+1);return ist.getTime()-(utc+330*60000);}function fmt(ms){const s=Math.floor(ms/1000),h=(''+Math.floor(s/3600)).padStart(2,'0'),m=(''+Math.floor(s%3600/60)).padStart(2,'0'),ss=(''+(s%60)).padStart(2,'0');return h+':'+m+':'+ss;}function tick(){el.textContent='Next word in '+fmt(until());requestAnimationFrame(tick);}tick();})();
+  // --- Config ---
+  const WORDLEN = 6;
+  const MAX_ROWS = 6;
 
-function dailyIndex(n){const now=new Date();const utc=now.getTime()+now.getTimezoneOffset()*60000;const ist= utc + 330*60000;const epoch=Date.UTC(2024,0,1,0,0,0);const days=Math.floor((ist-8*3600000-epoch)/86400000);return n?((days % n)+n)%n:0;}
-function tileAt(r,c){return grid.children[r*WORDLEN+c];}
-function guessString(){let s='';for(let c=0;c<WORDLEN;c++) s+= (tileAt(row,c).textContent||'');return s;}
-function showToast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);Object.assign(t.style,{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'72px',background:'#111',color:'#fff',padding:'.6rem .9rem',borderRadius:'10px',fontWeight:'800',boxShadow:'0 6px 24px rgba(0,0,0,.35)',zIndex:2000});}t.textContent=msg;t.style.opacity='1';clearTimeout(window.__t);window.__t=setTimeout(()=>t.style.opacity='0',1800);}
+  // --- DOM ---
+  const gridEl     = document.getElementById('grid');
+  const kbEl       = document.getElementById('keyboard');
+  const hintBtn    = document.getElementById('hintBtn');
+  const statsBtn   = document.getElementById('statsBtn');
+  const aboutBtn   = document.getElementById('aboutBtn');
+  const hintText   = document.getElementById('hintText');
+  const spinner    = document.getElementById('spinner');
 
-function renderGrid(){grid.style.display='grid';grid.style.gridTemplateColumns=`repeat(${WORDLEN}, var(--tileSize,56px))`;grid.innerHTML='';for(let i=0;i<MAX_ROWS*WORDLEN;i++){const t=document.createElement('div');t.className='tile';grid.appendChild(t);}}
-function loadKeyboard(){const rows=[['Q','W','E','R','T','Y','U','I','O','P'],['A','S','D','F','G','H','J','K','L'],['ENTER','Z','X','C','V','B','N','M','⌫']];keyboard.innerHTML='';rows.forEach(rowKeys=>{const r=document.createElement('div');r.className='krow';rowKeys.forEach(k=>{const b=document.createElement('button');b.className='key';if(k==='ENTER'||k==='⌫') b.classList.add('wide');b.textContent=k;b.addEventListener('click',()=>onKey(k));r.appendChild(b);});keyboard.appendChild(r);});}
-function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
-addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
-
-async function loadWords(){try{spinner.style.display='block';const txt=await fetch(CSV_PATH,{cache:'no-store'}).then(r=>r.text());const lines=txt.split('\n');for(let i=1;i<lines.length;i++){const line=(lines[i]||'').trim();if(!line) continue;const pos=line.indexOf(',');if(pos<0) continue;let w=line.slice(0,pos).toUpperCase();let clean='';for(let j=0;j<w.length;j++){const ch=w[j],L=ch.toLowerCase();if(L>='a'&&L<='z') clean+=ch;}const h=line.slice(pos+1).trim();if(clean.length===WORDLEN){words.push(clean);hints[clean]=h;}}}catch(e){}if(!words.length){words=['PANEER','SPICES','GINGER','TOMATO','ORANGE','BUTTER','CHEESE','MASALA','PICKLE','PAPAYA'];hints={'PANEER':'Indian cottage cheese','SPICES':'Masala magic','GINGER':'Zesty root','TOMATO':'Salad + sauce staple','ORANGE':'Citrus fruit','BUTTER':'Dairy spread','CHEESE':'Aged dairy','MASALA':'Spice blend','PICKLE':'Tangy preserved veg','PAPAYA':'Tropical fruit'};}const idx=dailyIndex(words.length);solution=words[idx]||words[0];setTimeout(autoSize,0);}
-function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
-function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
-function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
-if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
-
-function evaluate(g){const res=new Array(WORDLEN).fill('absent'),sol=solution.split(''),ga=g.split('');for(let i=0;i<WORDLEN;i++){if(ga[i]===sol[i]){res[i]='correct';sol[i]='*';ga[i]='_';}}for(let i=0;i<WORDLEN;i++){if(res[i]==='correct') continue;const p=sol.indexOf(ga[i]);if(p>-1){res[i]='present';sol[p]='*';}}return res;}
-function paintRow(r,res){for(let c=0;c<WORDLEN;c++){tileAt(r,c).classList.add(res[c]);}}
-
-function loadStats(){try{return JSON.parse(localStorage.getItem('fihr_stats_v1_pro')||'{}');}catch(e){return {};}}function saveStats(s){localStorage.setItem('fihr_stats_v1_pro', JSON.stringify(s));}
-function record(win){const s=Object.assign({played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:''}, loadStats());s.played++;if(win){s.wins++;s.cur++;if(s.cur>s.max)s.max=s.cur;s.totalGuesses+=(row+1);}else{s.cur=0;}if(HINT_USED)s.hints++;s.lastSolution=solution;saveStats(s);}
-function openStats(){const m=document.getElementById('statsModal');const b=document.getElementById('statsBody');const s=Object.assign({played:0,wins:0,cur:0,max:0,totalGuesses:0,hints:0,lastSolution:'-'}, loadStats());const winRate=s.played?Math.round(100*s.wins/s.played)+'%':'0%';const avg=s.wins?(s.totalGuesses/s.wins).toFixed(1):'0.0';b.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center"><div><div style="color:#9aa4b2">Played</div><div style="font-weight:900;font-size:1.3rem">${s.played}</div></div><div><div style="color:#9aa4b2">Wins</div><div style="font-weight:900;font-size:1.3rem">${s.wins}</div></div><div><div style="color:#9aa4b2">Win Rate</div><div style="font-weight:900;font-size:1.3rem">${winRate}</div></div><div><div style="color:#9aa4b2">Current Streak</div><div style="font-weight:900;font-size:1.3rem">${s.cur}</div></div><div><div style="color:#9aa4b2">Max Streak</div><div style="font-weight:900;font-size:1.3rem">${s.max}</div></div><div><div style="color:#9aa4b2">Avg Guesses</div><div style="font-weight:900;font-size:1.3rem">${avg}</div></div><div><div style="color:#9aa4b2">Hints Used</div><div style="font-weight:900;font-size:1.3rem">${s.hints}</div></div><div><div style="color:#9aa4b2">Last</div><div style="font-weight:900;font-size:1.3rem">${s.lastSolution}</div></div></div>`;m.classList.add('open');}
-
-function endGame(win){LOCK=true;try{window.confetti&&window.confetti({particleCount:200,spread:70,origin:{y:0.6}});}catch(e){}record(win);showToast(win?'Game Over - You Rock!':'Game Over - Better luck tomorrow');if(hintBtn) hintBtn.disabled=true;}
-function submit(){if(col<WORDLEN) return;const g=guessString();let valid=false;for(let i=0;i<words.length;i++){if(words[i]===g){valid=true;break;}}if(!valid){showToast('Not in word list');return;}const res=evaluate(g);paintRow(row,res);if(g===solution){endGame(true);return;}row++;col=0;if(row>=MAX_ROWS){endGame(false);}}
-function useHint(){if(HINT_USED) return;HINT_USED=true;const keepStart=MAX_ROWS-2;for(let rr=0;rr<keepStart;rr++){for(let c=0;c<WORDLEN;c++){tileAt(rr,c).classList.add('ghost');}}if(row<keepStart) row=keepStart;col=0;const h=hints[solution]||'';if(hintText) hintText.textContent=h?('Hint: '+h):'Hint used';if(hintBtn){hintBtn.disabled=true;hintBtn.style.opacity=.5;}showToast('Only 2 guesses left!');}
-
-document.querySelectorAll('.modal .bg,[data-close]').forEach(el=>el.addEventListener('click',e=>{el.closest('.modal').classList.remove('open');}));
-}});
-hintBtn&&hintBtn.addEventListener('click',()=>{if(!HINT_USED) document.getElementById('hintModal').classList.add('open');});
-document.getElementById('hintCancel').addEventListener('click',()=>document.getElementById('hintModal').classList.remove('open'));
-document.getElementById('hintConfirm').addEventListener('click',()=>{document.getElementById('hintModal').classList.remove('open');useHint();});
-statsBtn&&statsBtn.addEventListener('click',openStats);
-aboutBtn&&aboutBtn.addEventListener('click',()=>document.getElementById('aboutModal').classList.add('open'));
-
-function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
-function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
-function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
-
-if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
-
-function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
-addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
-
-
-})();
-
-try { if (window.__foodleProKeyHandler) { window.removeEventListener('keydown', window.__foodleProKeyHandler); } } catch(e){}
-window.__foodleProKeyHandler = function(e){
-  let k=e.key;
-  if(k==='Backspace') k='⌫';
-  else if(k==='Enter') k='ENTER';
-  else k=(k||'').toUpperCase();
-  if(k==='ENTER'||k==='⌫'||(k.length===1 && k>='A' && k<='Z')) onKey(k);
-};
-window.
-
-
-// v6.0.7: Single capturing keydown handler with dedupe; blocks other key handlers to avoid double entries.
-(function(){
-  try {
-    if (window.__foodleProKeyHandler) {
-      window.removeEventListener('keydown', window.__foodleProKeyHandler, true);
-    }
-  } catch(e) {}
-  var lastKey = null, lastTime = 0;
-  window.__foodleProKeyHandler = function(e){
-    // Stop other handlers from firing to avoid duplicate onKey calls.
-    e.stopImmediatePropagation();
-    // dedupe same key in a very short interval (mitigates double dispatch quirks)
-    var now = Date.now();
-    var key = e.key || '';
-    var sig = key + '|' + e.code;
-    if (sig === lastKey && (now - lastTime) < 35) { return; }
-    lastKey = sig; lastTime = now;
-
-    var k = key;
-    if (k === 'Backspace') k = '⌫';
-    else if (k === 'Enter') k = 'ENTER';
-    else k = (k || '').toUpperCase();
-
-    if (k === 'ENTER' || k === '⌫' || (k.length === 1 && k >= 'A' && k <= 'Z')) {
-      try { onKey(k); } catch(e) {}
-      e.preventDefault(); // avoid native side effects (like page scroll on space)
-    }
+  // --- State ---
+  let words = ['TOMATO','GINGER','PANEER','CASHEW','DHOKLA','PAPRIK','OREGANO','BUTTER','GHEEES','CHUTNY'];
+  let hints = {
+    TOMATO: 'Red fruit used as a vegetable.',
+    GINGER: 'Zesty root used in chai.',
+    PANEER: 'Indian cottage cheese.',
+    CASHEW: 'C-shaped nut, kaju.',
+    DHOKLA: 'Steamed Gujarati snack.',
+    PAPRIK: 'Spice ground from peppers.',
+    OREGANO:'Herb for pizza/pasta.',
+    BUTTER:'Made by churning cream.',
+    GHEEES:'Clarified butter in India.',
+    CHUTNY:'Condiment of fruits/spices.'
   };
-  window.addEventListener('keydown', window.__foodleProKeyHandler, {capture:true});
-})();
+  // Ensure all entries are exactly WORDLEN
+  words = words.map(w => (w||'').toUpperCase()).filter(w => w.length === WORDLEN);
 
+  // Pick solution by date for stability
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const solution = words[dayIndex % words.length] || 'TOMATO';
 
-// v6.0.8 robust startup: render UI immediately, then fetch words.
-document.addEventListener('DOMContentLoaded', function(){
-  try{
-    renderGrid();
-    loadKeyboard();
-    autoSize();
-    setTimeout(autoSize,0);
-  }catch(e){}
-  (async()=>{
-    try{ await loadWords(); }
-    catch(e){ console.warn('CSV load failed:', e); }
-    finally{ try{ spinner.style.display='none'; }catch(_){} }
+  let row = 0, col = 0, LOCK = false, used = {}; // used letter states
+  let hintUsed = false;
+  let allowedRows = MAX_ROWS;
+
+  // --- Render ---
+  function renderGrid() {
+    gridEl.innerHTML = '';
+    gridEl.style.gridTemplateColumns = `repeat(${WORDLEN}, var(--tileSize))`;
+    for (let r=0; r<MAX_ROWS; r++) {
+      for (let c=0; c<WORDLEN; c++) {
+        const d = document.createElement('div');
+        d.className = 'tile';
+        d.dataset.r = r;
+        d.dataset.c = c;
+        gridEl.appendChild(d);
+      }
+    }
+  }
+
+  function renderKeyboard(){
+    kbEl.innerHTML = '';
+    const rows = ['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'];
+    rows.forEach((rowStr,i)=>{
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'kbrow';
+      if(i===2){
+        rowDiv.appendChild(makeKey('Enter','ENTER'));
+      }
+      rowStr.split('').forEach(ch=>rowDiv.appendChild(makeKey(ch,ch)));
+      if(i===2){
+        rowDiv.appendChild(makeKey('⌫','⌫'));
+      }
+      kbEl.appendChild(rowDiv);
+    });
+  }
+
+  function makeKey(label, val){
+    const b = document.createElement('button');
+    b.className = 'key';
+    b.textContent = label;
+    b.dataset.key = val;
+    b.addEventListener('click', ()=> onKey(val));
+    return b;
+  }
+
+  function currentRowTiles(){
+    return [...gridEl.querySelectorAll(`.tile[data-r="${row}"]`)];
+  }
+
+  function onKey(k){
+    if(LOCK) return;
+    if(k==='⌫'){
+      if(col>0){
+        col--;
+        currentRowTiles()[col].textContent = '';
+      }
+      return;
+    }
+    if(k==='ENTER'){
+      if(col!==WORDLEN) return;
+      commitRow();
+      return;
+    }
+    if(k.length===1 && k>='A' && k<='Z'){
+      if(col<WORDLEN){
+        currentRowTiles()[col].textContent = k;
+        col++;
+      }
+    }
+  }
+
+  function commitRow(){
+    const guess = currentRowTiles().map(t=>t.textContent || ' ').join('');
+    if(guess.length!==WORDLEN) return;
+
+    const solArr = solution.split('');
+    const usedPos = Array(WORDLEN).fill(false);
+
+    // first pass: correct
+    currentRowTiles().forEach((t,i)=>{
+      const ch = guess[i];
+      if(ch===solArr[i]){
+        t.classList.add('correct');
+        used[ch] = 'correct';
+        usedPos[i]=true;
+      }
+    });
+    // second pass: present
+    currentRowTiles().forEach((t,i)=>{
+      if(t.classList.contains('correct')) return;
+      const ch = guess[i];
+      const pos = solArr.findIndex((c,idx)=>c===ch && !usedPos[idx]);
+      if(pos>-1){
+        t.classList.add('present');
+        if(used[ch] !== 'correct') used[ch]='present';
+        usedPos[pos]=true;
+      }else{
+        t.classList.add('absent');
+        if(!used[ch]) used[ch]='absent';
+      }
+    });
+    paintKeyboard();
+
+    if(guess===solution){
+      LOCK = true;
+      document.dispatchEvent(new CustomEvent('foodlePro:win'));
+      return;
+    }
+    row++;
+    col=0;
+
+    if(row>=allowedRows){
+      LOCK = true;
+      document.dispatchEvent(new CustomEvent('foodlePro:lose'));
+    }
+  }
+
+  function paintKeyboard(){
+    const keys = kbEl.querySelectorAll('button.key');
+    keys.forEach(k=>{
+      const l=k.dataset.key;
+      if(l.length!==1) return;
+      k.classList.remove('correct','present','absent');
+      if(used[l]) k.classList.add(used[l]);
+    });
+  }
+
+  // --- Hint logic ---
+  function applyHint(){
+    if(hintUsed) return;
+    hintUsed = true;
+    allowedRows = Math.min(MAX_ROWS, Math.max(row+2, 2));
+    hintBtn && (hintBtn.disabled = true);
+    if(hintText){
+      hintText.textContent = 'Hint: ' + (hints[solution] || 'No hint available');
+    }
+  }
+
+  // --- Events ---
+  renderGrid();
+  renderKeyboard();
+
+  // single, capturing keydown to avoid double entries
+  (function attachKeydown(){
+    try{ if(window.__foodleProKD){ window.removeEventListener('keydown', window.__foodleProKD, true);} }catch(e){}
+    window.__foodleProKD = function(e){
+      const key = e.key || '';
+      let mapped = key;
+      if(key==='Backspace') mapped='⌫';
+      else if(key==='Enter') mapped='ENTER';
+      else mapped = key.toUpperCase();
+      if(mapped==='ENTER' || mapped==='⌫' || (mapped.length===1 && mapped>='A' && mapped<='Z')){
+        e.stopImmediatePropagation();
+        onKey(mapped);
+      }
+    };
+    window.addEventListener('keydown', window.__foodleProKD, true);
   })();
-});
+
+  // hook hint button / modal (graceful fallback)
+  if(hintBtn){
+    hintBtn.addEventListener('click', ()=>{
+      const modal = document.getElementById('hintModal');
+      if(modal && modal.classList){ modal.classList.add('open');
+        const ok = document.getElementById('hintConfirm');
+        const cancel = document.getElementById('hintCancel');
+        const closeAll = ()=> modal.classList.remove('open');
+        if(ok){ ok.onclick = ()=>{ applyHint(); closeAll(); }; }
+        if(cancel){ cancel.onclick = closeAll; }
+      } else {
+        if(confirm('Use a hint? You will only have 2 tries left.')) applyHint();
+      }
+    });
+  }
+
+  // hide spinner if present
+  try{ if(spinner) spinner.style.display='none'; }catch(_){}
+
+  // basic autosize for tiles (keep board visible)
+  function autoSize(){
+    const vh = Math.max(window.innerHeight, 400);
+    const headerH = 220; // banner area approx
+    const kbH = 250;     // keyboard area approx
+    const avail = vh - headerH - kbH - 60;
+    const size = Math.max(38, Math.min(64, Math.floor(avail / MAX_ROWS) - 6));
+    document.documentElement.style.setProperty('--tileSize', size + 'px');
+  }
+  addEventListener('resize', autoSize);
+  addEventListener('orientationchange', autoSize);
+  setTimeout(autoSize, 0);
+})();
