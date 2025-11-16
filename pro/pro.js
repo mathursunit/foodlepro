@@ -23,7 +23,7 @@
   if(!kbEl){ kbEl = document.createElement('div'); kbEl.id='keyboard'; document.body.appendChild(kbEl); }
 
   // --- State ---
-  let words = ['TOMATO','GINGER','PANEER','CASHEW','DHOKLA','PAPRIK','OREGANO','BUTTER','GHEEES','CHUTNY'];
+  let words = ['TOMATO','GINGER','PANEER','CASHEW','DHOKLA','BUTTER','MASALA','COFFEE','ORANGE','BANANA'];
   let hints = {
     TOMATO: 'Red fruit used as a vegetable.',
     GINGER: 'Zesty root used in chai.',
