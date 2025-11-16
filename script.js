@@ -1,27 +1,3 @@
-
-function startResetTickerIST(elIdA, elIdB){
-  var el = document.getElementById(elIdA) || document.getElementById(elIdB);
-  if(!el) return;
-  var IST = 5.5*3600*1000;
-  function nextMs(){
-    var now=Date.now();
-    var ist=new Date(now+IST);
-    var y=ist.getUTCFullYear(), m=ist.getUTCMonth(), d=ist.getUTCDate();
-    var eight = Date.UTC(y,m,d,8,0,0) - IST;
-    var tgt = (now>=eight) ? (eight+86400000) : eight;
-    return Math.max(0, tgt-now);
-  }
-  function tick(){
-    var ms=nextMs();
-    var h=Math.floor(ms/3600000); ms-=h*3600000;
-    var m=Math.floor(ms/60000);   ms-=m*60000;
-    var s=Math.floor(ms/1000);
-    var txt=(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
-    if(el.id==='countdown'){ el.textContent='NEXT WORD IN '+txt; } else { el.textContent=txt; }
-  }
-  tick(); setInterval(tick,1000);
-}
-
 // script.js with toast notification and flip animation
 const APP_VERSION = 'v4.1.2';
 
@@ -326,28 +302,3 @@ function ensureLegend(){
     grid.insertAdjacentElement('afterend', legend);
   }
 }
-
-try{ startResetTickerIST('ticker','countdown'); }catch(e){}
-
-
-function confettiTop(opts){
-  opts = opts||{};
-  var duration=opts.duration||1500, count=opts.count||180,
-      colors=opts.colors||['#ffffff','#8b5cf6','#22c1c3','#f59e0b','#ef4444'];
-  var cvs=document.createElement('canvas');
-  Object.assign(cvs.style,{position:'fixed',left:0,top:0,width:'100vw',height:'100vh',pointerEvents:'none',zIndex:9999});
-  document.body.appendChild(cvs);
-  var ctx=cvs.getContext('2d');
-  function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
-  resize(); addEventListener('resize', resize, {passive:true});
-  var parts=Array.from({length:count}).map(function(){return {x:Math.random()*cvs.width,y:-Math.random()*cvs.height*0.5-10,
-    r:3+Math.random()*5,c:colors[(Math.random()*colors.length)|0],vx:(Math.random()-0.5)*1.2,vy:1+Math.random()*2.5,rot:Math.random()*6.28,vr:(Math.random()-0.5)*0.2};});
-  var start=performance.now();
-  function frame(t){
-    ctx.clearRect(0,0,cvs.width,cvs.height);
-    parts.forEach(function(p){p.x+=p.vx;p.y+=p.vy;p.vy+=0.02;p.rot+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2);ctx.restore();});
-    if(t-start<duration) requestAnimationFrame(frame); else { removeEventListener('resize',resize); cvs.remove(); }
-  }
-  requestAnimationFrame(frame);
-}
-

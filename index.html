@@ -15,7 +15,7 @@
 
 <style>.header .brand{width:min(560px,80vw);height:auto;display:block}</style></head>
 <body tabindex="0">
-<!-- v6.0.4 safety styles -->
+<!-- v6.0.21 safety styles -->
 <style>
 :root{--tileSize:56px}
 .mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
@@ -145,7 +145,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-<script src="script.js?v=v6.0.7"></script>
+<script src="script.js?v=v6.0.21"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -154,19 +154,19 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-  <script src="hint-addon.js?v=v6.0.7"></script>
-  <script src="ui-addon.js?v=v6.0.7"></script>
-  <script src="stats-addon.js?v=v6.0.7"></script>
-  <script src="social-addon.js?v=v6.0.7"></script>
-  <script src="menu-addon.js?v=v6.0.7"></script>
-  <script src="cleanup-addon.js?v=v6.0.7"></script>
-  <script src="confetti-fix.js?v=v6.0.7"></script>
+  <script src="hint-addon.js?v=v6.0.21"></script>
+  <script src="ui-addon.js?v=v6.0.21"></script>
+  <script src="stats-addon.js?v=v6.0.21"></script>
+  <script src="social-addon.js?v=v6.0.21"></script>
+  <script src="menu-addon.js?v=v6.0.21"></script>
+  <script src="cleanup-addon.js?v=v6.0.21"></script>
+  <script src="confetti-fix.js?v=v6.0.21"></script>
 
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.19'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.21'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;

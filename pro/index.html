@@ -3,8 +3,8 @@
 
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>FIHR Foodle — Pro</title>
-<link rel="stylesheet" href="../style.css?v=v6.0.8"/>
-<!-- v6.0.4 safety styles -->
+<link rel="stylesheet" href="../style.css?v=v6.0.21"/>
+<!-- v6.0.21 safety styles -->
 <style>
 :root{--tileSize:56px}
 .mode-tabs{position:sticky;top:0;z-index:40;display:flex;gap:0;background:rgba(15,23,42,.75);backdrop-filter:saturate(160%) blur(8px);border-bottom:1px solid #1f2735;justify-content:center}
@@ -43,7 +43,7 @@
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js" defer></script>
 
 <style>
-/* v6.0.5 glass theme (scoped to .pro) */
+/* v6.0.21 glass theme (scoped to .pro) */
 body.pro {
   background: radial-gradient(1200px 600px at 10% 0%, rgba(255,255,255,0.10), rgba(255,255,255,0) 60%),
               radial-gradient(900px 500px at 90% 20%, rgba(99,102,241,0.12), rgba(255,255,255,0) 60%),
@@ -145,10 +145,11 @@ body.pro {
 
 
 <style id="pro-patch">
-/* Smaller logos on Pro + tight spacing; keep ticker visible */
-.brand-row img, .banner img, header img { height: 72px !important; width: auto !important; object-fit: contain; }
-.ticker, #countdown { margin: 4px 0 6px !important; text-align:center; font-weight:600; opacity:.9; }
-.brand-row, .banner { margin-bottom: 4px !important; padding-bottom: 4px !important; }
+.header .brand{height:36px !important; width:auto !important; object-fit:contain}
+/* Classic colors for tiles */
+.tile.correct{background-color:#6aaa64 !important; border-color:#6aaa64 !important; box-shadow:0 2px 0 #538d4e !important; color:#fff !important}
+.tile.present{background-color:#c9b458 !important; border-color:#c9b458 !important; box-shadow:0 2px 0 #b59f3b !important; color:#fff !important}
+.tile.absent{ background-color:#787c7e !important; border-color:#787c7e !important; box-shadow:0 2px 0 #595c5f !important; color:#fff !important}
 </style>
 
 </head><body class="pro">
@@ -159,7 +160,7 @@ body.pro {
 </nav>
 <div class="container">
   <div class="next"><span id="countdown">Next word in …</span></div>
-  <div class="header glass"><img class="brand" src="../assets/fihr-foodle-title-transparent.png?v=v2.7" alt="FIHR Foodle"/></div><div class="logo">Foodle Pro</div></div>
+  <div class="header glass"><img class="brand" src="../assets/fihr-foodle-title-transparent.png?v=v2.7" alt="FIHR Foodle"/></div></div>
   <div id="spinner" class="next" style="display:none">Loading word list…</div>
   <div class="board"><div class="grid" id="grid" class="grid"></div></div>
   <div class="controls">
@@ -171,7 +172,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.19 (Pro)</div>
+<div class="watermark">Build v6.0.21 (Pro)</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -185,12 +186,12 @@ body.pro {
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="statsTitle">Your Pro Stats</h2><div id="statsBody" style="margin:.5rem 0"></div>
     <div class="actions"><button class="btn" id="resetStats">Reset</button><button class="btn" data-close="1">Close</button></div></div></div>
-<script src="pro.js?v=v6.0.13"></script>
+<script src="pro.js?v=v6.0.21"></script>
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.19 (Pro)'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.21 (Pro)'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;
