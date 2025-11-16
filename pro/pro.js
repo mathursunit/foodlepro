@@ -30,7 +30,6 @@ async function loadWords(){try{spinner.style.display='block';const txt=await fet
 function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
 function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
 function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
-if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
 
 function evaluate(g){const res=new Array(WORDLEN).fill('absent'),sol=solution.split(''),ga=g.split('');for(let i=0;i<WORDLEN;i++){if(ga[i]===sol[i]){res[i]='correct';sol[i]='*';ga[i]='_';}}for(let i=0;i<WORDLEN;i++){if(res[i]==='correct') continue;const p=sol.indexOf(ga[i]);if(p>-1){res[i]='present';sol[p]='*';}}return res;}
 function paintRow(r,res){for(let c=0;c<WORDLEN;c++){tileAt(r,c).classList.add(res[c]);}}
@@ -55,7 +54,6 @@ function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){su
 function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
 function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
 
-if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
 
 function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
 addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
@@ -75,22 +73,6 @@ window.
 
 
 // v6.0.8 robust startup: render UI immediately, then fetch words.
-document.addEventListener('DOMContentLoaded', function(){
-  try{
-    renderGrid();
-    loadKeyboard();
-    autoSize();
-    setTimeout(autoSize,0);
-  }catch(e){}
-  (async()=>{
-    try{ await loadWords(); }
-    catch(e){ console.warn('CSV load failed:', e); }
-    finally{ try{ spinner.style.display='none'; }catch(_){} }
-  })();
-});
-
-
-// v6.0.9 robust startup: render UI immediately, then fetch words in the background.
 document.addEventListener('DOMContentLoaded', function () {
   try {
     renderGrid();
