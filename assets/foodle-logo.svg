@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="180" viewBox="0 0 560 180">
+  <defs><linearGradient id="h" x1="0" x2="1"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#22c55e"/></linearGradient></defs>
+  <rect width="560" height="180" fill="none"/>
+  <g font-family="Inter,Segoe UI,Arial" font-weight="900" font-size="120" fill="url(#h)" stroke="#0f172a" stroke-width="8" stroke-linejoin="round">
+    <text x="10" y="125">Foodle</text>
+  </g>
+</svg>

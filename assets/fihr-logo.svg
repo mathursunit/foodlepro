@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="180" viewBox="0 0 420 180">
+  <defs><linearGradient id="g" x1="0" x2="1"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#22c1c3"/></linearGradient></defs>
+  <rect width="420" height="180" fill="none"/>
+  <g font-family="Inter,Segoe UI,Arial" font-weight="800" font-size="120" fill="url(#g)" stroke="#111827" stroke-width="8" stroke-linejoin="round">
+    <text x="10" y="125">FIHR</text>
+  </g>
+</svg>
