@@ -1,7 +1,7 @@
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>FIHR Foodle — Pro</title>
-<link rel="stylesheet" href="../style.css?v=v6.0.8"/>
+<link rel="stylesheet" href="../style.css?v=v6.0.9"/>
 <!-- v6.0.4 safety styles -->
 <style>
 :root{--tileSize:56px}
@@ -79,6 +79,8 @@ body.pro {
 #spinner{pointer-events:none}
 </style>
 
+
+<link rel="icon" href="../favicon.ico">
 </head><body class="pro">
 <nav class="mode-tabs" role="tablist" aria-label="Game modes">
   <a class="tab" href="#" role="tab" aria-selected="false" data-mode="classic">Classic</a>
@@ -99,7 +101,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.8</div>
+<div class="watermark">Build v6.0.9 (Pro)</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -113,12 +115,12 @@ body.pro {
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="statsTitle">Your Pro Stats</h2><div id="statsBody" style="margin:.5rem 0"></div>
     <div class="actions"><button class="btn" id="resetStats">Reset</button><button class="btn" data-close="1">Close</button></div></div></div>
-<script src="pro.js?v=v6.0.7"></script>
+<script src="pro.js?v=v6.0.9"></script>
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.8'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.9 (Pro)'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;
