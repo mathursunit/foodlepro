@@ -1,5 +1,5 @@
 
-/* Foodle Pro v6.0.7 */
+/* Foodle Pro v6.0.11 */
 (function(){
 'use strict';
 const WORDLEN=6, MAX_ROWS=6;
@@ -30,6 +30,7 @@ async function loadWords(){try{spinner.style.display='block';const txt=await fet
 function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
 function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
 function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){submit();return;}if(k.length===1){const ch=k.toUpperCase();if(ch>='A'&&ch<='Z') push(ch);}}
+if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
 
 function evaluate(g){const res=new Array(WORDLEN).fill('absent'),sol=solution.split(''),ga=g.split('');for(let i=0;i<WORDLEN;i++){if(ga[i]===sol[i]){res[i]='correct';sol[i]='*';ga[i]='_';}}for(let i=0;i<WORDLEN;i++){if(res[i]==='correct') continue;const p=sol.indexOf(ga[i]);if(p>-1){res[i]='present';sol[p]='*';}}return res;}
 function paintRow(r,res){for(let c=0;c<WORDLEN;c++){tileAt(r,c).classList.add(res[c]);}}
@@ -54,6 +55,7 @@ function onKey(k){if(LOCK) return;if(k==='⌫'){pop();return;}if(k==='ENTER'){su
 function push(ch){if(LOCK||col>=WORDLEN) return;const t=tileAt(row,col);t.textContent=ch;t.classList.add('filled');col++;}
 function pop(){if(LOCK||col<=0) return;col--;const t=tileAt(row,col);t.textContent='';t.classList.remove('filled');}
 
+if(k==='ENTER'||k==='⌫'||(k.length===1&&k>='A'&&k<='Z')) onKey(k);});
 
 function autoSize(){const root=document.documentElement;const vh=innerHeight||root.clientHeight,vw=innerWidth||root.clientWidth;const kbd=keyboard.getBoundingClientRect().height||220;const margins=175;const gap=6;const byH=Math.floor((vh-kbd-margins-(MAX_ROWS-1)*gap)/MAX_ROWS);const byW=Math.floor(((vw*0.9)-(WORDLEN-1)*gap)/WORDLEN);const size=Math.max(28,Math.min(byH,byW));root.style.setProperty('--tileSize', size+'px');}
 addEventListener('resize',autoSize);addEventListener('orientationchange',autoSize);
@@ -72,61 +74,49 @@ window.__foodleProKeyHandler = function(e){
 window.
 
 
-// v6.0.8 robust startup: render UI immediately, then fetch words.
-document.addEventListener('DOMContentLoaded', function () {
-  try {
-    renderGrid();
-    loadKeyboard();
-    autoSize();
-    setTimeout(autoSize, 0);
-  } catch (e) {
-    console.warn('UI render error:', e);
-  }
-
-  (async () => {
-    try {
-      let res;
-      try { res = await fetch(CSV_PATH); } catch (err) { res = { ok: false }; }
-      if (res && res.ok) {
-        const text = await res.text();
-        try { parseWordCsv(text); } catch (e) { console.warn('CSV parse err:', e); }
-        try { prepareTodayWord(); } catch (e) { console.warn('prepareTodayWord err:', e); }
-      } else {
-        console.warn('CSV fetch failed (offline or 404). UI remains usable.');
-      }
-    } finally {
-      try { spinner.style.display = 'none'; } catch (_) {}
-    }
-  })();
-});
-
-
-// v6.0.9 singleton capturing keyboard handler (prevents double input)
-(function () {
+// v6.0.7: Single capturing keydown handler with dedupe; blocks other key handlers to avoid double entries.
+(function(){
   try {
     if (window.__foodleProKeyHandler) {
       window.removeEventListener('keydown', window.__foodleProKeyHandler, true);
     }
-  } catch (e) {}
-
-  let lastSig = null, lastTs = 0;
-  window.__foodleProKeyHandler = function (e) {
+  } catch(e) {}
+  var lastKey = null, lastTime = 0;
+  window.__foodleProKeyHandler = function(e){
+    // Stop other handlers from firing to avoid duplicate onKey calls.
     e.stopImmediatePropagation();
-    const now = Date.now();
-    const sig = (e.key || '') + '|' + (e.code || '');
-    if (sig === lastSig && (now - lastTs) < 35) return;
-    lastSig = sig; lastTs = now;
+    // dedupe same key in a very short interval (mitigates double dispatch quirks)
+    var now = Date.now();
+    var key = e.key || '';
+    var sig = key + '|' + e.code;
+    if (sig === lastKey && (now - lastTime) < 35) { return; }
+    lastKey = sig; lastTime = now;
 
-    let k = e.key || '';
+    var k = key;
     if (k === 'Backspace') k = '⌫';
     else if (k === 'Enter') k = 'ENTER';
-    else k = k.toUpperCase();
+    else k = (k || '').toUpperCase();
 
     if (k === 'ENTER' || k === '⌫' || (k.length === 1 && k >= 'A' && k <= 'Z')) {
-      try { onKey(k); } catch (_) {}
-      e.preventDefault();
+      try { onKey(k); } catch(e) {}
+      e.preventDefault(); // avoid native side effects (like page scroll on space)
     }
   };
-
-  window.addEventListener('keydown', window.__foodleProKeyHandler, { capture: true });
+  window.addEventListener('keydown', window.__foodleProKeyHandler, {capture:true});
 })();
+
+
+// v6.0.8 robust startup: render UI immediately, then fetch words.
+document.addEventListener('DOMContentLoaded', function(){
+  try{
+    renderGrid();
+    loadKeyboard();
+    autoSize();
+    setTimeout(autoSize,0);
+  }catch(e){}
+  (async()=>{
+    try{ await loadWords(); }
+    catch(e){ console.warn('CSV load failed:', e); }
+    finally{ try{ spinner.style.display='none'; }catch(_){} }
+  })();
+});
