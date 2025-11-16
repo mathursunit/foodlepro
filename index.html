@@ -166,7 +166,7 @@ if ('serviceWorker' in navigator) {
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.12'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.13'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;

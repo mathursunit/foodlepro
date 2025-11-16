@@ -81,6 +81,22 @@ body.pro {
 #spinner{pointer-events:none}
 </style>
 
+
+<style id="pro-hardening">
+:root{ --tileSize:56px; --tileGap:10px; --correct:#8b5cf6; --present:#22c1c3; --absent:#3b404b; }
+#grid.grid{ display:grid; grid-template-columns:repeat(6,var(--tileSize)); grid-auto-rows:var(--tileSize); gap:var(--tileGap); justify-content:center; margin:12px auto; }
+#grid .tile{ width:var(--tileSize); height:var(--tileSize); border-radius:12px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:calc(var(--tileSize)*.5); color:#e8ecf1; box-shadow: inset 0 1px 0 rgba(255,255,255,.12); text-transform:uppercase; }
+#grid .tile.correct{ background:var(--correct); }
+#grid .tile.present{ background:var(--present); }
+#grid .tile.absent{ background:var(--absent); }
+#keyboard{ max-width:740px; margin:18px auto 28px; }
+#keyboard .kbrow{ display:flex; gap:8px; justify-content:center; margin:6px 0; }
+#keyboard .key{ padding:14px 12px; min-width:40px; border-radius:10px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); color:#e8ecf1; font-weight:600; }
+#keyboard .key.correct{ background:var(--correct); }
+#keyboard .key.present{ background:var(--present); }
+#keyboard .key.absent{ background:var(--absent); }
+</style>
+
 </head><body class="pro">
 <nav class="mode-tabs" role="tablist" aria-label="Game modes">
   <a class="tab" href="#" role="tab" aria-selected="false" data-mode="classic">Classic</a>
@@ -91,7 +107,7 @@ body.pro {
   <div class="next"><span id="countdown">Next word in …</span></div>
   <div class="header glass"><img class="brand" src="../assets/fihr-foodle-title-transparent.png?v=v2.7" alt="FIHR Foodle"/></div><div class="logo">Foodle Pro</div></div>
   <div id="spinner" class="next" style="display:none">Loading word list…</div>
-  <div class="board"><div class="grid" id="grid"></div></div>
+  <div class="board"><div class="grid" id="grid" class="grid"></div></div>
   <div class="controls">
     <button id="hintBtn" class="btn icon-btn" title="Hint" aria-label="Hint">💡</button>
     <button id="statsBtn" class="btn icon-btn" title="Stats" aria-label="Stats">📊</button>
@@ -101,7 +117,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.12 (Pro)</div>
+<div class="watermark">Build v6.0.13 (Pro)</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -115,12 +131,12 @@ body.pro {
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="statsTitle">Your Pro Stats</h2><div id="statsBody" style="margin:.5rem 0"></div>
     <div class="actions"><button class="btn" id="resetStats">Reset</button><button class="btn" data-close="1">Close</button></div></div></div>
-<script src="pro.js?v=v6.0.12"></script>
+<script src="pro.js?v=v6.0.13"></script>
 <script>
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.12 (Pro)'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.13 (Pro)'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;

@@ -8,13 +8,19 @@
   const MAX_ROWS = 6;
 
   // --- DOM ---
-  const gridEl     = document.getElementById('grid');
-  const kbEl       = document.getElementById('keyboard');
+  let gridEl     = document.getElementById('grid');
+  let kbEl       = document.getElementById('keyboard');
   const hintBtn    = document.getElementById('hintBtn');
   const statsBtn   = document.getElementById('statsBtn');
   const aboutBtn   = document.getElementById('aboutBtn');
   const hintText   = document.getElementById('hintText');
   const spinner    = document.getElementById('spinner');
+
+  
+  // Ensure containers exist and have expected classes
+  if(!gridEl){ gridEl = document.createElement('div'); gridEl.id='grid'; document.body.appendChild(gridEl); }
+  gridEl.classList.add('grid');
+  if(!kbEl){ kbEl = document.createElement('div'); kbEl.id='keyboard'; document.body.appendChild(kbEl); }
 
   // --- State ---
   let words = ['TOMATO','GINGER','PANEER','CASHEW','DHOKLA','PAPRIK','OREGANO','BUTTER','GHEEES','CHUTNY'];
@@ -44,7 +50,7 @@
   // --- Render ---
   function renderGrid() {
     gridEl.innerHTML = '';
-    gridEl.style.gridTemplateColumns = `repeat(${WORDLEN}, var(--tileSize))`;
+    gridEl.style.gridTemplateColumns = `repeat(${WORDLEN}, var(--tileSize))`; gridEl.classList.add('grid');
     for (let r=0; r<MAX_ROWS; r++) {
       for (let c=0; c<WORDLEN; c++) {
         const d = document.createElement('div');
