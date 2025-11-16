@@ -143,6 +143,14 @@ body.pro {
 </style>
 
 
+
+<style id="pro-patch">
+/* Smaller logos on Pro + tight spacing; keep ticker visible */
+.brand-row img, .banner img, header img { height: 72px !important; width: auto !important; object-fit: contain; }
+.ticker, #countdown { margin: 4px 0 6px !important; text-align:center; font-weight:600; opacity:.9; }
+.brand-row, .banner { margin-bottom: 4px !important; padding-bottom: 4px !important; }
+</style>
+
 </head><body class="pro">
 <nav class="mode-tabs" role="tablist" aria-label="Game modes">
   <a class="tab" href="#" role="tab" aria-selected="false" data-mode="classic">Classic</a>
@@ -163,7 +171,7 @@ body.pro {
   <div id="hintText" class="next" style="min-height:24px;"></div>
   <div class="kbd" id="keyboard" aria-label="Keyboard"></div>
 </div>
-<div class="watermark">Build v6.0.16 (Pro)</div>
+<div class="watermark">Build v6.0.19 (Pro)</div>
 <div class="modal" id="hintModal" role="dialog" aria-modal="true" aria-labelledby="hintTitle">
   <div class="bg" data-close="1"></div>
   <div class="panel"><h2 id="hintTitle">Use a hint?</h2><p>You’ll have only <b>2</b> remaining guesses after using the hint.</p>
@@ -182,7 +190,7 @@ body.pro {
 (function(){
   try{
     const b=document.body;while(b.firstChild && b.firstChild.nodeType===3){b.removeChild(b.firstChild);}
-    const W='Build v6.0.16 (Pro)'; const all=document.querySelectorAll('.watermark');
+    const W='Build v6.0.19 (Pro)'; const all=document.querySelectorAll('.watermark');
     if(all.length>1){ for(let i=1;i<all.length;i++) all[i].remove(); }
     let m=all[0]; if(!m){ m=document.createElement('div'); m.className='watermark'; document.body.appendChild(m); }
     m.textContent=W;
