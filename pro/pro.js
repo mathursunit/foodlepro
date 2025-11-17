@@ -296,3 +296,7 @@ function dropConfetti(durationMs=1500, count=60){
   }
   setTimeout(()=>root.remove(), durationMs+1200);
 }
+
+// Build v6.0.25: define allowed set from words (uppercase)
+const allowedSet = new Set(words.map(w => w.toUpperCase()));
+
