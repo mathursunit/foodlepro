@@ -24,6 +24,7 @@
 
   // --- State ---
   let words = ['TOMATO','GINGER','PANEER','CASHEW','DHOKLA','BUTTER','MASALA','COFFEE','ORANGE','BANANA'];
+  const allowedSet = new Set(words.map(w => (w||'').toUpperCase()));
   let hints = {
     TOMATO: 'Red fruit used as a vegetable.',
     GINGER: 'Zesty root used in chai.',
@@ -296,7 +297,3 @@ function dropConfetti(durationMs=1500, count=60){
   }
   setTimeout(()=>root.remove(), durationMs+1200);
 }
-
-// Build v6.0.25: define allowed set from words (uppercase)
-const allowedSet = new Set(words.map(w => w.toUpperCase()));
-
