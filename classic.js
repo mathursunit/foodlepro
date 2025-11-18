@@ -1,6 +1,6 @@
 
 (function(){
-  const COLS = 6;
+  const COLS = 5;
   const ROWS = 6;
   const grid = document.querySelector('[data-grid]');
   const kb   = document.querySelector('[data-keyboard]');
@@ -19,11 +19,14 @@
     }
   }
 
-  // keyboard
+  // build keyboard
   const layout = "QWERTYUIOP ASDFGHJKL ZXCVBNM".split(" ");
   const KEYS = [];
-  layout.forEach(row => row.split("").forEach(ch => KEYS.push(ch)));
+  layout.forEach((row,i) => {
+    row.split("").forEach(ch => KEYS.push(ch));
+  });
   KEYS.push("⌫","Enter");
+
   KEYS.forEach(k => {
     const div = document.createElement('div');
     div.className = 'key';
@@ -33,12 +36,12 @@
     kb.appendChild(div);
   });
 
-  const wl = (window.FOODLE_PRO_WORDS || []);
-  const idxSeed = new Date().toISOString().slice(0,10).split("-").join("")
-    .split("").reduce((a,b)=>a+parseInt(b,10),0);
-  const today = wl.length ? wl[idxSeed % wl.length] : { w: "paprik", h: "Demo word" };
+  // choose today's word deterministically from list
+  const wl = (window.FOODLE_CLASSIC_WORDS || []);
+  const todayIdx = new Date().toISOString().slice(0,10).split("-").join("")
+    .split("").reduce((a,b)=>a+parseInt(b,10),0) % wl.length;
+  const today = wl[todayIdx] || { w: "apple", h: "Demo word" };
   const ANSWER = today.w.toLowerCase();
-  const allowedSet = new Set(wl.map(x => x.w.toLowerCase()));
 
   let row = 0, col = 0, over = false, hintUsed = false;
   let activeRows = ROWS;
@@ -58,6 +61,7 @@
     const g = guess.split("");
     const used = Array(COLS).fill(false);
 
+    // first pass correct
     for (let i=0;i<COLS;i++){
       const tile = cell(r,i);
       tile.classList.remove("correct","present","absent","filled");
@@ -66,6 +70,7 @@
         used[i] = true;
       }
     }
+    // second pass present / absent
     for (let i=0;i<COLS;i++){
       const tile = cell(r,i);
       if (tile.classList.contains("correct")) continue;
@@ -90,18 +95,10 @@
       showToast("Not enough letters");
       return;
     }
-    if (!allowedSet.has(guess)){
-      showToast("Not in Foodle Pro list");
-      grid.animate(
-        [{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}],
-        {duration:150}
-      );
-      return;
-    }
     paintRow(row, guess, ANSWER);
     if (guess === ANSWER){
       over = true;
-      if (window.confettiTop) confettiTop({count:260});
+      if (window.confettiTop) confettiTop({count:220});
       showToast("Game Over - You Rock!");
       disableKeyboard();
       return;
@@ -129,10 +126,28 @@
     col++;
   }
 
+  function markDisabledRows(){
+    for (let r=row+1;r<ROWS;r++){
+      const any = cell(r,0);
+      if (!any) continue;
+      const rowTiles = [];
+      for (let c=0;c<COLS;c++){
+        rowTiles.push(cell(r,c));
+      }
+      rowTiles.forEach(t => {
+        t.parentElement && t.parentElement.classList;
+        t.classList.add("row-disabled-cell");
+      });
+      // easier: wrap uses row-disabled via dataset
+    }
+  }
+
   function applyHintEffect(){
-    // Pro rule: hint => only TWO guesses left (current + one more)
-    activeRows = Math.min(ROWS, row + 2);
-    for (let r=activeRows;r<ROWS;r++){
+    // Classic: all but ONE remaining guess.
+    // That means: current row is the LAST playable row.
+    activeRows = row + 1;
+    // Visually cross out future rows
+    for (let r=row+1;r<ROWS;r++){
       for (let c=0;c<COLS;c++){
         cell(r,c).classList.add("row-disabled");
       }
@@ -140,7 +155,7 @@
   }
 
   function openHintConfirm(){
-    if (hintUsed){
+    if (hintUsed) {
       showToast("Hint already used");
       return;
     }
@@ -151,7 +166,7 @@
     box.innerHTML = `
       <div class="modal-title">Use a hint?</div>
       <div class="modal-body">
-        Using a hint will leave you with <strong>only two remaining guesses</strong> in Foodle Pro.
+        Using a hint will leave you with <strong>only one remaining guess</strong> for today's Foodle.
       </div>
       <div class="modal-actions">
         <button class="btn btn-ghost" data-action="cancel">Cancel</button>
@@ -168,14 +183,15 @@
       hintUsed = true;
       if (hintBtn) hintBtn.disabled = true;
       applyHintEffect();
-      showToast("Hint: " + (today.h || "Chef left you a clue!"));
+      showToast("Hint: " + (today.h || "It's something tasty!"));
     };
 
-    backdrop.addEventListener("click", e => {
+    backdrop.addEventListener("click",e=>{
       if (e.target === backdrop) close();
     });
     window.addEventListener("keydown", function escHandler(ev){
       if (ev.key === "Escape"){
+        ev.stopPropagation();
         window.removeEventListener("keydown", escHandler, true);
         close();
       }
